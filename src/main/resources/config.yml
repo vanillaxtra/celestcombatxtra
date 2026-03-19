@@ -1,0 +1,451 @@
+# TIME FORMAT GUIDE
+# Simple formats: 20s (20 seconds), 5m (5 minutes), 1h (1 hour)
+# Complex format: 1d_2h_30m_15s (1 day, 2 hours, 30 minutes, 15 seconds)
+# Units: s = seconds, m = minutes, h = hours, d = days, w = weeks, mo = months, y = years
+
+# ADDING CUSTOM LANGUAGE
+# 1. Create a new folder in the language directory
+# 2. Use the files from en_US folder as a template
+# 3. Modify those files as needed (messages.yml, formatting.yml,...)
+# 4. Set language to your custom folder name
+
+#---------------------------------------------------
+#               Language Settings
+#---------------------------------------------------
+# Language setting (available: en_US, vi_VN)
+language: en_US
+
+# Enable or disable debug mode (provides verbose console output)
+debug: false
+
+#---------------------------------------------------
+#              CORE COMBAT SETTINGS
+#---------------------------------------------------
+combat:
+  # Combat tag duration
+  duration: 20s
+
+  # Command blocking mode: "blacklist" or "whitelist"
+  # whitelist - blocks all commands EXCEPT those listed in 'allowed_commands'
+  # blacklist - blocks only commands listed in 'blocked_commands'
+  command_block_mode: "blacklist"
+
+  # Commands blocked during combat (used in blacklist mode)
+  blocked_commands:
+    - "logout"
+    - "tpa"
+    - "tpahere"
+    - "afk"
+    - "spawn"
+    - "tpaccept"
+    - "tpacancel"
+    - "rtp"
+    - "warp"
+    - "home"
+    - "team"
+    - "enderchest"
+    - "ec"
+    - "vanish"
+    - "v"
+
+  # Commands allowed during combat (used in whitelist mode)
+  allowed_commands:
+    - "msg"
+    - "r"
+    - "reply"
+    - "tell"
+    - "w"
+    - "whisper"
+    - "shop"
+    - "buy"
+    - "sell"
+    - "ah"
+
+  # If true, players kicked/banned by admins won't be punished (killed) for combat logging
+  exempt_admin_kick: true
+
+  # Disable flight (Creative fly) during combat
+  disable_flight: false
+
+  # Scoreboard team prefix/suffix while combat-tagged (& for colors).
+  # Placeholders: %opponent% %opponent_display% %time% %time_seconds% (remaining combat seconds)
+  nametag:
+    enabled: false
+    prefix: "&c⚔ "
+    suffix: " &7vs &f%opponent% &8(%time%s)"
+
+#---------------------------------------------------
+#              ITEM RESTRICTIONS
+#---------------------------------------------------
+# Top-level: disabled items (hard block in combat) + cooldowned items (use cooldowns).
+# Legacy: same structure may exist under combat.item_restrictions (still supported).
+item_restrictions:
+  enabled: true
+
+  # Hard-disabled items while in combat (ELYTRA enables elytra combat rules — see elytra:)
+  disabled_items:
+    enabled: true
+    items:
+      - ELYTRA
+
+  # Per-material use cooldowns (client overlay + server enforcement).
+  # cooldown: duration string (e.g. "1s") or tick count (number).
+  # cooldown_out_of_combat: true = rules apply in and out of combat (default).
+  #                         false = only while combat-tagged (still use disable_in/out for hard blocks).
+  cooldowned_items:
+    enabled: true
+    entries:
+      - material: CHORUS_FRUIT
+        cooldown: "10s"
+        cooldown_out_of_combat: true
+
+
+      # Bedrock/Education only (optional)
+      # - material: ICE_BOMB
+      #   cooldown: "1s"
+
+#---------------------------------------------------
+#              REGEARING (while combat-tagged)
+#---------------------------------------------------
+regearing:
+  enabled: true
+  block_enderchest: true
+  block_shulker_boxes: true
+  block_bundle_access: true
+
+#---------------------------------------------------
+#                       ELYTRA
+#---------------------------------------------------
+# All elytra combat extras in one place (glide + firework blocking, optional abuse penalties).
+# ELYTRA must still be listed under item_restrictions.disabled_items when require_elytra_in_disabled_list is true.
+elytra:
+  enabled: true
+  require_elytra_in_disabled_list: true
+
+  abuse_prevention:
+    # If false: glide/firework stay blocked in combat, but NO strike counter and NO unequip/break/drop penalty.
+    enabled: true
+    strikes_before_action: 2
+    # When the elytra cannot be moved into inventory (inventory full):
+    # TEMP_BREAK — max durability on chest piece, restore after temp_break_duration_seconds
+    # DROP — unequip and drop the item at the player's feet (no durability change)
+    full_inventory_action: TEMP_BREAK
+    temp_break_duration_seconds: 30
+
+#---------------------------------------------------
+#     CRYSTAL / ANCHOR / BED / TNT MINECART (global)
+#---------------------------------------------------
+# When disabled, players get an action bar notice (see language files).
+explosive_controls:
+  enabled: false
+  end_crystal:
+    prevent_placement: false
+    explosion_damage_entities: true
+    explosion_break_blocks: true
+  respawn_anchor:
+    prevent_use: false
+    # When false (or prevent_use true), player damage from anchor blasts is cancelled even though
+    # the anchor block is already destroyed when damage is applied (uses explosion position cache).
+    explosion_damage_entities: true
+    explosion_break_blocks: true
+  bed_nether_end:
+    prevent_use: false
+    # Same as respawn_anchor for Nether/End bed explosions.
+    explosion_damage_entities: true
+    explosion_break_blocks: true
+  tnt_minecart:
+    prevent_explosion: false
+    explosion_damage_entities: true
+    explosion_break_blocks: true
+
+#---------------------------------------------------
+#              ENCHANT LEVEL LIMITS
+#---------------------------------------------------
+# Keys are Minecraft enchantment IDs (lowercase in registry), e.g. protection, sharpness, power
+# violation_action: REVERT (clamp to max), DELETE (remove whole item), NONE (no change)
+enchant_limiter:
+  enabled: false
+  bypass_permission: celestcombatxtra.bypass.enchant_limit
+  violation_action: REVERT
+  limits:
+    protection: 4
+    sharpness: 5
+
+#---------------------------------------------------
+#              SPEAR (1.21+)
+#---------------------------------------------------
+spear_control:
+  enabled: false
+  bypass_permission: celestcombatxtra.bypass.spear_control
+  lunge_cooldown:
+    enabled: true
+    duration: "2s"
+  # If true, spear melee and spear projectile deal no damage
+  disable_damage: false
+
+#---------------------------------------------------
+#              ENDER PEARL RESTRICTIONS
+#---------------------------------------------------
+enderpearl:
+  # Refresh combat timer when player lands an ender pearl
+  refresh_combat_on_land: false
+
+  # Completely block ender pearls during combat
+  # If true, players cannot use ender pearls at all when in combat
+  block_in_combat: false
+
+  cooldown:
+    # Enable/disable ender pearl cooldowns
+    enabled: true
+
+    # Cooldown duration
+    duration: 1s
+
+    # Only apply cooldowns during combat
+    in_combat_only: false
+
+    # Per-world settings (overrides global setting)
+    worlds:
+      minigames: false  # Example: cooldowns disabled in minigames world
+
+#---------------------------------------------------
+#              WIND CHARGE RESTRICTIONS
+#---------------------------------------------------
+# Legacy root name windcharge_control is still read if windcharge: is not present.
+windcharge:
+  enabled: true
+  # If true, wind charge cooldown/usage controls only apply while in combat
+  in_combat_only: false
+  # If true, throwing a wind charge refreshes your combat timer (like pearl/trident land options)
+  refresh_combat_on_throw: false
+  cooldown:
+    # Cooldown duration (supports formats like `10s`, `5m`, `1h`, or a tick count number)
+    duration: 1s
+    disable_in_combat: false
+    disable_out_of_combat: false
+
+#---------------------------------------------------
+#               TRIDENT RESTRICTIONS
+#---------------------------------------------------
+trident:
+  # Refresh combat timer when trident lands (similar to enderpearl)
+  refresh_combat_on_land: false
+  
+  # Completely block tridents during combat (both throwing and riptide)
+  # This overrides cooldowns and prevents any trident usage during combat
+  block_in_combat: true
+
+  # Worlds where tridents are completely banned
+  banned_worlds:
+    world_nether: true # Example: tridents banned in the nether
+    # Add more worlds as needed
+
+  # Trident cooldown configuration
+  cooldown:
+    # Enable/disable trident cooldowns globally
+    enabled: true
+
+    # Cooldown duration (supports: s, m, h, d for seconds, minutes, hours, days)
+    duration: "10s"
+
+    # Only apply cooldown when player is in combat
+    in_combat_only: true
+
+    # Per-world cooldown settings (overrides global enabled setting)
+    worlds:
+      world: true          # Enable cooldown in overworld
+      world_nether: false  # Disable cooldown in nether
+      world_the_end: true  # Enable cooldown in end
+      # Add more worlds as needed
+
+# ---------------------------------------------------
+#                MACE
+# ---------------------------------------------------
+# Mace hits start a cooldown (and optional out-of-combat block). Do not list MACE under item_restrictions.cooldowned_items.
+# Legacy block name mace_restrictions is still read if mace: is absent.
+mace:
+  enabled: true
+  # attack_mode: any_attack | player_hit_only
+  attack_mode: player_hit_only
+  duration: 5s
+  # If false, mace hits are cancelled when the attacker is not combat-tagged
+  allow_out_of_combat: true
+
+# ---------------------------------------------------
+#                HARMING ARROWS
+# ---------------------------------------------------
+harming:
+  no_damage: true
+  # If false, cancel shooting/loading harming arrows from bows.
+  bows_allow_harming: true
+  # If false, cancel shooting/loading harming arrows from crossbows.
+  crossbows_allow_harming: true
+  # If false, cancel dispenser dispensing harming arrows (and harming potions).
+  dispensers_allow_harming: true
+  # If true, block using/dropping harming (instant damage) potions.
+  prevent_potions: true
+
+#---------------------------------------------------
+#                  DEATH EFFECTS
+#---------------------------------------------------
+death_animation:
+  # Master toggle for death animations
+  enabled: true
+
+  # Only show animations for player kills
+  only_player_kill: true
+
+  # Animation types (random selection if multiple enabled)
+  animation:
+    lightning: true
+    fire_particles: true
+
+# ---------------------------------------------------
+#                  KILL REWARDS
+# ---------------------------------------------------
+kill_rewards:
+  # Master toggle for kill rewards
+  enabled: true
+
+  # Commands executed when player gets a kill
+  # Variables: %killer% = killer's name, %victim% = victim's name
+  commands:
+    - "donutcratecore shards give %killer% 10"
+    # add more commands as needed
+
+  cooldown:
+    # Global cooldown system
+    # If true, killing any player puts ALL kill rewards on cooldown for this player
+    # This means after one kill, the player must wait before earning rewards from ANY kill
+    use_global_cooldown: false
+
+    # Duration for global cooldown (only used if use_global_cooldown is true)
+    # Supports: s (seconds), m (minutes), h (hours), d (days)
+    # Examples: 30s, 5m, 2h, 1d
+    duration: 1d
+
+    # Same-player cooldown system
+    # If true, cooldowns are tracked per victim (player can kill different players for rewards)
+    # If false, no same-player cooldowns are enforced
+    # Note: use_global_cooldown takes priority over this setting
+    use_same_player_cooldown: true
+
+    # Duration for same-player cooldowns (only used if use_same_player_cooldown is true)
+    # This is how long a player must wait before earning rewards from killing the SAME victim again
+    same_player_duration: 1d
+
+#---------------------------------------------------
+#              NEW PLAYER PROTECTION
+#---------------------------------------------------
+newbie_protection:
+  # Enable/disable the newbie protection system
+  enabled: true
+
+  # Duration of protection for new players
+  # Formats: 10s, 5m, 1h, 30m, etc.
+  duration: 10m
+
+  # Protection settings
+  protect_from_pvp: true      # Protect from player vs player damage
+  protect_from_mobs: false    # Protect from mob damage
+
+  # Removal conditions
+  remove_on_damage_dealt: true    # Remove protection when player deals damages to another player
+
+  # Display settings
+  display:
+    use_bossbar: true
+    use_actionbar: false
+
+    bossbar:
+      title: "&#4CAF50PvP Protection: &#FFFFFF%time%"
+      color: "GREEN"      # BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
+      style: "SOLID"      # SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+
+  # World-specific settings (optional)
+  # If not specified, protection is enabled in all worlds
+  worlds:
+    world: true           # Enable protection in 'world'
+    world_nether: false   # Disable protection in 'world_nether'
+    world_the_end: false  # Disable protection in 'world_the_end'
+
+#---------------------------------------------------
+#              WORLDGUARD INTEGRATION
+#---------------------------------------------------
+# WorldGuard's barrier for no-pvp regions
+safezone_protection:
+  # Enable/disable WorldGuard integration for safezone barriers
+  # This will prevent players from entering safezones while in combat
+  enabled: true
+
+  # Block chorus fruit teleportation into safe zones during combat
+  block_chorus_fruit: true
+
+  # Block type for the barrier
+  # Set "BARRIER" for invisible but solid barrier
+  # Valid materials can be found at: https://jd.papermc.io/paper/1.21.5/org/bukkit/Material.html
+  barrier_material: "RED_STAINED_GLASS"
+
+  # How close the player to borders before barriers appear
+  barrier_detection_radius: 5 # blocks
+
+  # How tall the barriers are
+  barrier_height: 3
+
+  # Push force when player accidentally go inside the barrier blocks
+  # Higher values = stronger push back, lower values = gentler push
+  push_back_force: 0.6
+
+  # Per-world configuration
+  # You can enable/disable safezone protection for specific worlds
+  # If a world is not listed here, it will use the global 'enabled' setting above
+  # Setting correctly will help save server performance
+  worlds:
+    # Example configurations:
+    spawn_world: true          # Enable in spawn world
+    world: true          # Enable in the main world
+    world_nether: false  # Disable in the nether
+    world_the_end: false  # Disable in the end
+    # Add more worlds as needed
+
+#---------------------------------------------------
+#            GRIEFPREVENTION INTEGRATION
+#---------------------------------------------------
+claim_protection:
+  # Enable/disable GriefPrevention integration for claim barriers
+  # This will prevent players in combat from entering protected claims
+  enabled: false
+
+  # Block type for the barrier around protected claims
+  # Set "BARRIER" for invisible but solid barrier
+  # Valid materials can be found at: https://jd.papermc.io/paper/1.21.5/org/bukkit/Material.html
+  barrier_material: "BLUE_STAINED_GLASS"
+
+  # How close the player needs to be to claim borders before barriers appear
+  barrier_detection_radius: 5 # blocks
+
+  # How tall the barriers are (blocks high from player level)
+  barrier_height: 3
+
+  # Push force when player tries to enter a protected claim
+  # Higher values = stronger push back, lower values = gentler push
+  push_back_force: 0.6
+
+  # Player claim's permission to bypass claim barriers (player can enter claims while in combat)
+  # EDIT - Can edit claims settings for admins (not recommended for regular players)
+  # MANAGE - Can manage claim settings (most restrictive)
+  # BUILD - Can place/break blocks in the claim (default, good balance)
+  # CONTAINER - Can access containers inventory in the claim (least restrictive)
+  # ACCESS - Can access the claim's bed, buttons and levers (recommended for most cases)
+  required_permission: BUILD
+
+  # Per-world configuration
+  # You can enable/disable claim protection for specific worlds
+  # If a world is not listed here, it will use the global 'enabled' setting above
+  # Setting correctly will help save server performance
+  worlds:
+    # Example configurations:
+    world: true                # Enable in the main world
+    world_nether: true        # Enable in the nether
+    world_the_end: false       # Disable in the end
+    # Add more worlds as needed

@@ -1,0 +1,38 @@
+name: CelestCombat-Xtra
+version: '1.0.0'
+main: com.shyamstudio.celestcombatXtra.CelestCombatXtra
+api-version: '1.21'
+authors: [ RaviRai, Nighter ]
+description: A simple combat logging plugins
+folia-supported: true
+
+soft-depend:
+  - WorldGuard
+  - Multiverse-Core
+  - Worlds
+
+commands:
+  celestcombat-xtra:
+    description: Main command for CelestCombat Xtra
+    usage: /celestcombat-xtra
+    aliases: [celestcombat, combat, ccx]
+
+permissions:
+  celestcombatxtra.command.use:
+    description: Allows players to use all commands of CelestCombat Xtra
+    default: op
+  celestcombatxtra.update.notify:
+    description: Allows players to receive update notifications
+    default: op
+  celestcombatxtra.bypass.tag:
+    description: Allows players to bypass being tagged in combat
+    default: false
+  celestcombatxtra.command.config:
+    description: Allows players to browse and edit plugin config via command
+    default: op
+  celestcombatxtra.bypass.enchant_limit:
+    description: Bypass enchant level limits
+    default: op
+  celestcombatxtra.bypass.spear_control:
+    description: Bypass spear lunge cooldown and spear damage rules
+    default: op

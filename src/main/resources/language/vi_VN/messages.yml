@@ -1,0 +1,385 @@
+prefix: ""
+
+# ------------------------------------------------------
+#                  Combat messages
+# ------------------------------------------------------
+combat_countdown:
+  action_bar: "&#4A90E2Combat: &#FFFFFF%time%s"
+
+player_died_combat_logout:
+  message: "&cBạn đã thoát khi đang trong combat và bị phạt."
+  title: "&#E94E77HÌNH PHẠT CHIẾN ĐẤU"
+  subtitle: "&#BF3A49Đừng thoát khi đang chiến đấu!"
+  sound: entity.wither.hurt
+
+command_blocked_in_combat:
+  message: "&cBạn không thể sử dụng lệnh /%command% khi đang trong combat! &#F39C12Chờ &#FFFFFF%time%s &#F39C12cho đến khi kết thúc."
+  sound: block.anvil.land
+
+combat_expired:
+  enabled: true
+  message: "&#4CAF50Bạn không còn trong combat."
+  sound: entity.experience_orb.pickup
+
+combat_fly_disabled:
+  message: "&cBạn không thể bay khi đang trong combat!"
+  sound: block.note_block.pling
+
+item_use_blocked_in_combat:
+  message: "&cBạn không thể sử dụng %item% khi đang trong combat!"
+  action_bar: "&#E94E77Bạn không thể sử dụng %item% khi đang trong combat!"
+  sound: block.note_block.pling
+
+elytra_removed_combat_abuse:
+  message: "&cElytra của bạn đã bị tháo sau khi lạm dụng trong combat."
+  action_bar: "&#E94E77Elytra đã chuyển vào túi đồ — không bay trong combat!"
+  sound: block.note_block.pling
+
+elytra_temp_broken_combat_abuse:
+  message: "&cTúi đồ đầy — elytra bị hỏng tạm %seconds% giây. Độ bền sẽ được khôi phục."
+  action_bar: "&#E94E77Elytra hỏng %seconds% giây — dọn chỗ trong túi!"
+  sound: block.note_block.pling
+
+elytra_dropped_combat_abuse:
+  message: "&cTúi đồ đầy — elytra đã rơi xuống chân bạn."
+  action_bar: "&#E94E77Elytra đã rơi — túi đồ đầy!"
+  sound: block.note_block.pling
+
+explosive_denied_end_crystal:
+  action_bar: "&#E94E77End crystal bị tắt ở đây."
+
+explosive_denied_anchor:
+  action_bar: "&#E94E77Respawn anchor bị tắt ở đây."
+
+explosive_denied_bed:
+  action_bar: "&#E94E77Giường bị tắt trong chiều không gian này."
+
+explosive_denied_minecart:
+  action_bar: "&#E94E77TNT minecart nổ bị tắt."
+
+enchant_limiter_reverted:
+  message: "&eMột vật phẩm có cấp phù phép quá cao đã được chỉnh lại."
+
+enchant_limiter_item_removed:
+  message: "&cMột vật phẩm có cấp phù phép quá cao đã bị xóa."
+
+spear_lunge_cooldown:
+  action_bar: "&#E94E77Spear lunge: &#FFFFFF%time%s"
+
+combat_enderchest_blocked:
+  message: "&cBạn không thể truy cập enderchest khi đang trong combat!"
+  sound: block.note_block.pling
+
+combat_shulker_blocked:
+  message: "&cBạn không thể truy cập shulker box khi đang trong combat!"
+  sound: block.note_block.pling
+
+combat_bundle_blocked:
+  message: "&cBạn không thể truy cập bundle khi đang trong combat!"
+  sound: block.note_block.pling
+
+# ------------------------------------------------------
+#                Ender pearl messages
+# ------------------------------------------------------
+enderpearl_blocked_in_combat:
+  message: "&cBạn không thể sử dụng điều này khi đang combat!"
+  sound: block.note_block.pling
+
+enderpearl_cooldown:
+  action_bar: "&#E94E77Ngọc Ender đang trong thời gian hồi!"
+  sound: block.note_block.pling
+
+pearl_only_countdown:
+  action_bar: "&#E94E77Ngọc Ender hồi: &#FFFFFF%pearl_time%s"
+
+combat_pearl_countdown:
+  action_bar: "&#4A90E2Combat: &#FFFFFF%combat_time%s &#8B8B8B| &#E94E77Ngọc Ender hồi: &#FFFFFF%pearl_time%s"
+
+combat_wind_countdown:
+  action_bar: "&#4A90E2Combat: &#FFFFFF%combat_time%s &#8B8B8B| &#4FC3F7Wind Charge: &#FFFFFF%wind_time%s"
+
+# ------------------------------------------------------
+#                Trident messages
+# ------------------------------------------------------
+trident_banned:
+  message: "&cĐinh ba bị cấm trong thế giới này!"
+  sound: block.note_block.pling
+trident_blocked_in_combat:
+  message: "&cBạn không thể sử dụng đinh ba khi đang trong trận chiến!"
+  sound: block.note_block.pling
+trident_cooldown:
+  action_bar: "&#4FC3F7Đinh ba đang trong thời gian hồi!"
+  sound: block.note_block.pling
+
+trident_only_countdown:
+  action_bar: "&#4FC3F7Đinh ba hồi: &#FFFFFF%time%s"
+
+# ------------------------------------------------------
+#              Combined countdown messages
+# ------------------------------------------------------
+combat_pearl_trident_countdown:
+  action_bar: "&#4A90E2Combat: &#FFFFFF%combat_time%s &#8B8B8B| &#E94E77Ngọc Ender: &#FFFFFF%pearl_time%s &#8B8B8B| &#4FC3F7Đinh ba: &#FFFFFF%trident_time%s"
+
+combat_trident_countdown:
+  action_bar: "&#4A90E2Combat: &#FFFFFF%combat_time%s &#8B8B8B| &#4FC3F7Đinh ba: &#FFFFFF%trident_time%s"
+
+pearl_trident_countdown:
+  action_bar: "&#E94E77Ngọc Ender: &#FFFFFF%pearl_time%s &#8B8B8B| &#4FC3F7Đinh ba: &#FFFFFF%trident_time%s"
+
+# ------------------------------------------------------
+#                Kill reward messages
+# ------------------------------------------------------
+kill_reward_received:
+  action_bar: "&#8A2BE2+★10 &#FFFFFFđược cho vì đã giết %victim%"
+  sound: entity.player.levelup
+
+# ------------------------------------------------------
+#              Newbie protection messages
+# ------------------------------------------------------
+newbie_protection_granted:
+  message: "&#4CAF50Cấp bảo vệ newbie &#FFFFFF%duration%&#4CAF50! Bạn an toàn trước PvP."
+  title: "&#4CAF50CẤP BẢO VỆ"
+  subtitle: "&#66BB6ABạn an toàn trước PvP!"
+  sound: entity.player.levelup
+
+newbie_protection_attack_blocked:
+  message: "&#E94E77Không thể tấn công &#FFFFFF%player% &#E94E77vì có bảo vệ newbie!"
+  sound: entity.villager.no
+
+newbie_protection_removed_attack:
+  title: "&#FF9800HỦY BẢO VỆ PVP"
+  subtitle: "&#E65100Tấn công người khác - mất bảo vệ PVP!"
+  sound: entity.wither.hurt
+
+newbie_protection_actionbar:
+  action_bar: "&#4CAF50Bảo vệ PvP: &#FFFFFF%time%"
+
+# ------------------------------------------------------
+# Safe zone messages for third-party protection plugins
+# ------------------------------------------------------
+combat_no_safezone_entry:
+  message: "&cKhông thể vào khu an toàn khi đang combat! &#F39C12Vui lòng chờ &#FFFFFF%time% &#F39C12giây."
+  sound: block.note_block.pling
+
+combat_no_pearl_safezone:
+  message: "&cKhông thể dùng ender pearl vào khu an toàn khi đang combat!"
+  sound: block.note_block.pling
+
+combat_no_chorus_safezone:
+  message: "&cKhông thể dùng chorus fruit vào khu an toàn khi đang combat!"
+  sound: block.note_block.pling
+
+killed_trying_to_enter_safezone_combat:
+  message: "&cBạn đã bị giết khi cố gắng vào khu an toàn trong combat."
+  title: "&#E94E77HÌNH PHẠT CHIẾN ĐẤU"
+  subtitle: "&#BF3A49Đừng vào khu an toàn khi đang trong combat!"
+  sound: entity.wither.hurt
+
+# ------------------------------------------------------
+# Claim protection messages for GriefPrevention
+# ------------------------------------------------------
+combat_no_claim_entry:
+  message: "&cKhông thể vào vùng đất được bảo vệ khi đang combat! &#F39C12Vui lòng chờ &#FFFFFF%time% &#F39C12giây."
+  sound: block.note_block.pling
+
+combat_no_pearl_claim:
+  message: "&cKhông thể dùng ender pearl vào vùng đất được bảo vệ khi đang combat!"
+  sound: block.note_block.pling
+
+combat_killed_no_safe_location:
+  message: "&cBạn đã bị giết khi cố gắng vào vùng đất được bảo vệ trong combat."
+  title: "&#E94E77HÌNH PHẠT CHIẾN ĐẤU"
+  subtitle: "&#BF3A49Đừng vào vùng đất được bảo vệ khi đang trong combat!"
+  sound: entity.wither.hurt
+
+# ------------------------------------------------------
+#               Plugin command messages
+# ------------------------------------------------------
+no_permission:
+  message: "&cBạn không có quyền sử dụng lệnh này."
+  sound: entity.villager.no
+
+help_message:
+  message: |
+    &8&m
+    &8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    &8                          &7&#F5F5DC&lDANH SÁCH LỆNH
+    &8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    &8» &#4A90E2/cc reload &#F5F5DC- Tải lại cấu hình plugin
+    &8» &#4A90E2/cc tag &#F5F5DC- Đánh dấu người chơi đang trong combat
+    &8» &#4A90E2/cc removeTag player <player> &#F5F5DC- Gỡ trạng thái combat khỏi người chơi
+    &8» &#4A90E2/cc removeTag world <world> &#F5F5DC- Gỡ trạng thái combat của toàn bộ người chơi trong một thế giới
+    &8» &#4A90E2/cc removeTag all &#F5F5DC- Gỡ trạng thái combat của toàn bộ người chơi trên máy chủ
+    &8» &#4A90E2/cc killReward check <player> [target] &#F5F5DC- Kiểm tra thời gian hồi cooldown phần thưởng giết người chơi
+    &8» &#4A90E2/cc killReward clear <player> &#F5F5DC- Xóa thời gian hồi cooldown phần thưởng giết của người chơi
+    &8» &#4A90E2/cc killReward clearAll &#F5F5DC- Xóa tất cả thời gian hồi cooldown phần thưởng giết trên máy chủ
+    &8» &#4A90E2/cc newbieProtection give <player> &#F5F5DC- Cấp bảo vệ cho người chơi mới
+    &8» &#4A90E2/cc newbieProtection remove <player> &#F5F5DC- Gỡ bỏ bảo vệ người chơi mới
+    &8» &#4A90E2/cc newbieProtection check <player> &#F5F5DC- Kiểm tra trạng thái bảo vệ người chơi mới
+    &8&m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Reload command messages
+config_reloaded:
+  message: "&#4CAF50Cấu hình CelestCombat đã được tải lại thành công."
+  sound: entity.player.levelup
+
+config_reload_skipped_reserved_cooldown_items:
+  message: "&eĐã bỏ qua cooldowned_items cho: &f%materials% &7(ender pearl, trident, wind charge, elytra, mace dùng mục cấu hình riêng.)"
+
+# Combat tag command messages
+combat_tag_success:
+  message: "&#4CAF50Đã đánh dấu %player1% và %player2% trong combat."
+  sound: entity.experience_orb.pickup
+
+combat_tag_single_success:
+  message: "&#4CAF50Đã đánh dấu %player% trong combat."
+  sound: entity.experience_orb.pickup
+
+player_not_found:
+  message: "&cKhông tìm thấy người chơi %player%."
+  sound: entity.villager.no
+
+# Combat removal command messages
+player_not_in_combat:
+  message: "&c%player% hiện không đang trong combat!"
+  sound: entity.villager.no
+
+combat_remove_success:
+  message: "&#4CAF50Đã xóa %player% khỏi combat thành công!"
+  sound: entity.experience_orb.pickup
+
+world_not_found:
+  message: "&cKhông tìm thấy thế giới '%world%'!"
+  sound: entity.villager.no
+
+no_players_in_combat_world:
+  message: "&cKhông có người chơi nào đang trong combat ở thế giới '%world%'!"
+  sound: entity.villager.no
+
+combat_remove_world_success:
+  message: "&#4CAF50Đã xóa thành công %count% người chơi khỏi combat trong thế giới '%world%'!"
+  sound: entity.experience_orb.pickup
+
+no_players_in_combat_server:
+  message: "&cHiện không có người chơi nào đang trong combat trên máy chủ!"
+  sound: entity.villager.no
+
+combat_remove_all_success:
+  message: "&#4CAF50Đã xóa thành công %count% người chơi khỏi combat trên toàn máy chủ!"
+  sound: entity.experience_orb.pickup
+
+# Kill cooldown command messages
+clear_cooldown_success:
+  message: "&#4CAF50Đã xóa thành công tất cả thời gian hồi cooldown phần thưởng giết của %player%!"
+  sound: entity.experience_orb.pickup
+
+clear_all_cooldowns_success:
+  message: "&#4CAF50Đã xóa thành công tất cả %count% thời gian hồi cooldown phần thưởng giết!"
+  sound: entity.experience_orb.pickup
+
+no_cooldowns_to_clear:
+  message: "&cKhông có thời gian hồi cooldown phần thưởng giết nào để xóa!"
+  sound: entity.villager.no
+
+# Kill cooldown check messages
+no_kill_cooldown:
+  message: "&#4CAF50%player% không có thời gian hồi cooldown phần thưởng giết đang hoạt động"
+  sound: entity.experience_orb.pickup
+
+no_kill_cooldown_target:
+  message: "&#4CAF50%player% không có thời gian hồi cooldown phần thưởng giết đang hoạt động cho %target%"
+  sound: entity.experience_orb.pickup
+
+kill_cooldown_remaining:
+  message: "&e%player% còn %time% thời gian hồi cooldown phần thưởng giết"
+  sound: block.note_block.pling
+
+kill_cooldown_remaining_target:
+  message: "&e%player% còn %time% thời gian hồi cooldown phần thưởng giết cho %target%"
+  sound: block.note_block.pling
+
+# Newbie protection command messages
+newbie_protection_give_success:
+  message: "&#4CAF50Đã cấp bảo vệ cho người chơi mới %player% thành công!"
+  sound: entity.experience_orb.pickup
+
+newbie_protection_remove_success:
+  message: "&#4CAF50Đã gỡ bỏ bảo vệ người chơi mới khỏi %player% thành công!"
+  sound: entity.experience_orb.pickup
+
+newbie_protection_already_has:
+  message: "&c%player% đã có bảo vệ người chơi mới rồi!"
+  sound: entity.villager.no
+
+newbie_protection_not_protected:
+  message: "&c%player% không có bảo vệ người chơi mới!"
+  sound: entity.villager.no
+
+newbie_protection_check_protected:
+  message: "&#4CAF50%player% có bảo vệ người chơi mới còn lại %time%"
+  sound: block.note_block.pling
+
+# ------------------------------------------------------
+#                  Phase 1: Cooldowns
+# ------------------------------------------------------
+windcharge_disabled_in_combat:
+  message: "&cWind Charge bị vô hiệu hóa khi bạn đang trong combat!"
+  action_bar: "&#E94E77Wind Charge bị vô hiệu hóa trong combat!"
+
+windcharge_disabled_out_of_combat:
+  message: "&cWind Charge bị vô hiệu hóa khi bạn đang ngoài combat!"
+  action_bar: "&#E94E77Wind Charge bị vô hiệu hóa ngoài combat!"
+
+windcharge_cooldown:
+  action_bar: "&#4FC3F7Wind Charge: &#FFFFFF%time%s"
+
+mace_cooldown:
+  action_bar: "&#E57373Chùy: &#FFFFFF%time%s"
+
+general_item_disabled_in_combat:
+  message: "&cBạn không thể dùng %item% khi đang trong combat!"
+  action_bar: "&#E94E77Bạn không thể dùng %item% khi đang trong combat!"
+  sound: block.note_block.pling
+
+general_item_disabled_out_of_combat:
+  message: "&cBạn không thể dùng %item% khi đang ngoài combat!"
+  action_bar: "&#E94E77Bạn không thể dùng %item% khi đang ngoài combat!"
+  sound: block.note_block.pling
+
+general_item_cooldown:
+  action_bar: "&#4FC3F7%item% hồi: &#FFFFFF%time%s"
+  sound: block.note_block.pling
+
+harming_arrows_disallowed:
+  message: "&cMáu bắn hại (harming arrows) bị vô hiệu hóa trên server!"
+  sound: block.note_block.pling
+
+harming_disallowed:
+  message: "&cHarming bị vô hiệu hóa trên server!"
+  sound: block.note_block.pling
+
+# ------------------------------------------------------
+#               Config command messages
+# ------------------------------------------------------
+config_invalid_path:
+  message: "&cĐường dẫn config không hợp lệ: &f%path%"
+  sound: entity.villager.no
+
+config_section_children:
+  message: "&eMục config &f%path%&e -> &f%children%"
+  sound: block.note_block.pling
+
+config_key_info:
+  message: "&eKhóa config &f%path%&e | kiểu: &f%type%&e | hiện tại: &f%value%"
+
+config_set_type_error:
+  message: "&cGiá trị '&f%input%&c' không hợp lệ cho &f%path%&c (cần kiểu &f%type%&c)."
+  sound: entity.villager.no
+
+config_set_success:
+  message: "&#4CAF50Đã cập nhật &f%path% &#4CAF50thành &f%value%&#4CAF50."
+  sound: entity.experience_orb.pickup
+
+config_reload_success:
+  message: "&#4CAF50Đã reload config thành công sau khi cập nhật."
+  sound: entity.player.levelup
