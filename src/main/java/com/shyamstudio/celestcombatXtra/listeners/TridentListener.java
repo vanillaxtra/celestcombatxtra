@@ -116,6 +116,7 @@ public class TridentListener implements Listener {
         if (item.containsEnchantment(Enchantment.RIPTIDE)) {
             if (combatManager.isTridentOnCooldown(player)) {
                 denyTridentInteract(event, action);
+                syncTridentClientCooldown(player);
                 sendCooldownMessage(player);
                 return;
             }
@@ -125,6 +126,7 @@ public class TridentListener implements Listener {
             // Handle non-riptide tridents
             if (combatManager.isTridentOnCooldown(player)) {
                 denyTridentInteract(event, action);
+                syncTridentClientCooldown(player);
                 sendCooldownMessage(player);
             }
         }
@@ -155,6 +157,7 @@ public class TridentListener implements Listener {
 
         // Check if trident is on cooldown
         if (combatManager.isTridentOnCooldown(player)) {
+            syncTridentClientCooldown(player);
             sendCooldownMessage(player);
             rollbackRiptide(player);
             return;
@@ -207,6 +210,7 @@ public class TridentListener implements Listener {
             if (combatManager.isTridentOnCooldown(player)) {
                 event.setCancelled(true);
                 event.getEntity().remove();
+                syncTridentClientCooldown(player);
                 sendCooldownMessage(player);
             } else {
                 // Set cooldown when player successfully launches a trident (non-riptide)
@@ -237,6 +241,15 @@ public class TridentListener implements Listener {
                     combatManager.refreshCombatOnTridentLand(player);
                 }
             }
+        }
+    }
+
+    /** Syncs the physical item cooldown overlay when blocking use (e.g. after relog). */
+    private void syncTridentClientCooldown(Player player) {
+        if (player == null) return;
+        int remaining = combatManager.getRemainingTridentCooldown(player);
+        if (remaining > 0) {
+            player.setCooldown(Material.TRIDENT, Math.max(1, remaining * 20));
         }
     }
 

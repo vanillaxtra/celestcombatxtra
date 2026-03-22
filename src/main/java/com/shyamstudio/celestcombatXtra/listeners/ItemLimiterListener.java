@@ -265,6 +265,13 @@ public final class ItemLimiterListener implements Listener {
     return Math.min(stackAmount, canTake);
   }
 
+  /** Returns true if adding {@code addAmount} of {@code material} would exceed the player's limit. */
+  public boolean wouldExceedLimit(Player player, Material material, int addAmount) {
+    if (player == null || material == null || material.isAir() || addAmount <= 0) return false;
+    if (!enabledInWorld(player.getWorld().getName()) || hasBypass(player)) return false;
+    return getCanAdd(player, material, addAmount) == 0;
+  }
+
   /** How many of this material can the player add (from any source)? -1 = not limited, 0 = none, >0 = that many. */
   private int getCanAdd(Player player, Material m, int available) {
     if (m == null || m.isAir()) return -1;

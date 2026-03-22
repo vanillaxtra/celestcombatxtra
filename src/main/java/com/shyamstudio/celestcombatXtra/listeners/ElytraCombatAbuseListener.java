@@ -71,9 +71,9 @@ public final class ElytraCombatAbuseListener implements Listener {
 
   private boolean requireElytraInDisabledList() {
     if (usesNewElytraConfig()) {
-      return plugin.getConfig().getBoolean("elytra.require_elytra_in_disabled_list", true);
+      return plugin.getConfig().getBoolean("elytra.require_elytra_in_disabled_list", false);
     }
-    return true;
+    return false;
   }
 
   private int strikesBeforeAction() {

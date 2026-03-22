@@ -124,10 +124,10 @@ regearing:
 #                       ELYTRA
 #---------------------------------------------------
 # All elytra combat extras in one place (glide + firework blocking, optional abuse penalties).
-# ELYTRA must still be listed under item_restrictions.disabled_items when require_elytra_in_disabled_list is true.
+# Elytra abuse prevention works independently of disabled_items; no need to list ELYTRA there.
 elytra:
   enabled: true
-  require_elytra_in_disabled_list: true
+  require_elytra_in_disabled_list: false
 
   abuse_prevention:
     # If false: glide/firework stay blocked in combat, but NO strike counter and NO unequip/break/drop penalty.

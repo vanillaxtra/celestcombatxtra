@@ -32,17 +32,17 @@ item_use_blocked_in_combat:
 
 elytra_removed_combat_abuse:
   message: "&cYour elytra was unequipped after repeated use in combat."
-  action_bar: "&#E94E77Elytra moved to your inventory — no flying in combat!"
+  action_bar: "&#E94E77Elytra moved to your inventory. No flying in combat!"
   sound: block.note_block.pling
 
 elytra_temp_broken_combat_abuse:
-  message: "&cYour inventory was full — your elytra was broken for %seconds%s. Durability will return."
-  action_bar: "&#E94E77Elytra broken %seconds%s — make inventory space!"
+  message: "&cYour inventory was full. Your elytra was broken for %seconds%s. Durability will return."
+  action_bar: "&#E94E77Elytra broken %seconds%s."
   sound: block.note_block.pling
 
 elytra_dropped_combat_abuse:
-  message: "&cYour inventory was full — your elytra was dropped at your feet."
-  action_bar: "&#E94E77Elytra dropped — inventory was full!"
+  message: "&cYour inventory was full. Your elytra was dropped at your feet."
+  action_bar: "&#E94E77Elytra dropped. Your inventory was full!"
   sound: block.note_block.pling
 
 explosive_denied_end_crystal:
@@ -95,14 +95,14 @@ enderpearl_blocked_in_combat:
   sound: block.note_block.pling
 
 enderpearl_cooldown:
-  action_bar: "&#E94E77Ender Pearl is on cooldown!"
+  action_bar: "&#E94E77Ender Pearl: &#FFFFFF%time%s"
   sound: block.note_block.pling
 
 pearl_only_countdown:
-  action_bar: "&#E94E77Ender Pearl cooldown: &#FFFFFF%time%s"
+  action_bar: "&#E94E77Ender Pearl: &#FFFFFF%time%s"
 
 combat_pearl_countdown:
-  action_bar: "&#4A90E2Combat: &#FFFFFF%combat_time%s &#8B8B8B| &#E94E77Pearl: &#FFFFFF%pearl_time%s"
+  action_bar: "&#4A90E2Combat: &#FFFFFF%combat_time%s &#8B8B8B| &#E94E77Ender Pearl: &#FFFFFF%pearl_time%s"
 
 combat_wind_countdown:
   action_bar: "&#4A90E2Combat: &#FFFFFF%combat_time%s &#8B8B8B| &#4FC3F7Wind Charge: &#FFFFFF%wind_time%s"
@@ -129,13 +129,13 @@ trident_only_countdown:
 #              Combined countdown messages
 # ------------------------------------------------------
 combat_pearl_trident_countdown:
-  action_bar: "&#4A90E2Combat: &#FFFFFF%combat_time%s &#8B8B8B| &#E94E77Pearl: &#FFFFFF%pearl_time%s &#8B8B8B| &#4FC3F7Trident: &#FFFFFF%trident_time%s"
+  action_bar: "&#4A90E2Combat: &#FFFFFF%combat_time%s &#8B8B8B| &#E94E77Ender Pearl: &#FFFFFF%pearl_time%s &#8B8B8B| &#4FC3F7Trident: &#FFFFFF%trident_time%s"
 
 combat_trident_countdown:
   action_bar: "&#4A90E2Combat: &#FFFFFF%combat_time%s &#8B8B8B| &#4FC3F7Trident: &#FFFFFF%trident_time%s"
 
 pearl_trident_countdown:
-  action_bar: "&#E94E77Pearl: &#FFFFFF%pearl_time%s &#8B8B8B| &#4FC3F7Trident: &#FFFFFF%trident_time%s"
+  action_bar: "&#E94E77Ender Pearl: &#FFFFFF%pearl_time%s &#8B8B8B| &#4FC3F7Trident: &#FFFFFF%trident_time%s"
 
 # ------------------------------------------------------
 #                Kill reward messages
@@ -343,7 +343,7 @@ windcharge_disabled_out_of_combat:
   action_bar: "&#E94E77Wind Charge disabled out of combat!"
 
 windcharge_cooldown:
-  action_bar: "&#4FC3F7Wind: &#FFFFFF%time%s"
+  action_bar: "&#4FC3F7Wind Charge: &#FFFFFF%time%s"
 
 mace_cooldown:
   action_bar: "&#E57373Mace: &#FFFFFF%time%s"

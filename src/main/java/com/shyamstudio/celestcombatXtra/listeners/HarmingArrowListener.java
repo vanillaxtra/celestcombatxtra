@@ -2,6 +2,7 @@ package com.shyamstudio.celestcombatXtra.listeners;
 
 import org.bukkit.Material;
 import org.bukkit.entity.AbstractArrow;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.ThrownPotion;
@@ -16,6 +17,7 @@ import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionEffectType;
 
 import io.papermc.paper.event.entity.EntityLoadCrossbowEvent;
 import org.bukkit.potion.PotionType;
@@ -168,23 +170,33 @@ public final class HarmingArrowListener implements Listener {
   private boolean isHarmingArrowItem(ItemStack item) {
     if (item == null) return false;
     if (!(item.getItemMeta() instanceof PotionMeta meta)) return false;
-
-    try {
-      return meta.getBasePotionData().getType().toString().equalsIgnoreCase("INSTANT_DAMAGE");
-    } catch (Exception ignored) {
-      return false;
-    }
+    return getIsHarmingFromMeta(meta);
   }
 
   private boolean isHarmingPotionItem(ItemStack item) {
     if (item == null) return false;
     if (!(item.getItemMeta() instanceof PotionMeta meta)) return false;
+    return getIsHarmingFromMeta(meta);
+  }
 
+  private boolean getIsHarmingFromMeta(PotionMeta meta) {
     try {
-      return meta.getBasePotionData().getType().toString().equalsIgnoreCase("INSTANT_DAMAGE");
-    } catch (Exception ignored) {
-      return false;
+      PotionType type = meta.getBasePotionType();
+      return isHarmingPotionType(type);
+    } catch (NoSuchMethodError | Exception e) {
+      try {
+        Object type = meta.getBasePotionData().getType();
+        return type != null && (type.toString().equalsIgnoreCase("INSTANT_DAMAGE")
+            || type.toString().toUpperCase().contains("HARMING"));
+      } catch (Exception ignored) {
+        return false;
+      }
     }
+  }
+
+  private boolean isHarmingPotionType(PotionType type) {
+    if (type == null) return false;
+    return type == PotionType.HARMING || type == PotionType.STRONG_HARMING;
   }
 
   private boolean isHarmingThrownPotion(ThrownPotion potion) {
@@ -225,37 +237,39 @@ public final class HarmingArrowListener implements Listener {
   private boolean isHarmingArrowProjectile(AbstractArrow arrow) {
     if (arrow == null) return false;
 
-    // Best-effort reflection to support different server implementations.
+    // Primary: check the arrow's item (most reliable across versions)
+    ItemStack arrowItem = arrow.getItem();
+    if (arrowItem != null && isHarmingArrowItem(arrowItem)) return true;
+
+    if (!(arrow instanceof Arrow tippedArrow)) return false;
+
+    // 1.20.5+: use getBasePotionType()
     try {
-      Method basePotionDataMethod = arrow.getClass().getMethod("getBasePotionData");
-      Object potionData = basePotionDataMethod.invoke(arrow);
-      if (potionData != null) {
-        Method typeMethod = potionData.getClass().getMethod("getType");
-        Object potionType = typeMethod.invoke(potionData);
-        return potionType != null && potionType.toString().equalsIgnoreCase("INSTANT_DAMAGE");
-      }
-    } catch (Exception ignored) {
-      // Fallback below
+      PotionType type = tippedArrow.getBasePotionType();
+      if (isHarmingPotionType(type)) return true;
+    } catch (NoSuchMethodError | Exception ignored) {
     }
 
+    // Check custom effects (HARM/INSTANT_DAMAGE)
     try {
-      Method effectsMethod = arrow.getClass().getMethod("getEffects");
-      Object effectsObj = effectsMethod.invoke(arrow);
-      if (effectsObj instanceof Collection<?> effects) {
-        for (Object eff : effects) {
-          try {
-            Method getType = eff.getClass().getMethod("getType");
-            Object type = getType.invoke(eff);
-            if (type != null && type.toString().equalsIgnoreCase("INSTANT_DAMAGE")) {
-              return true;
-            }
-          } catch (Exception ignored) {
-            // ignore this effect
-          }
+      PotionEffectType harm = PotionEffectType.INSTANT_DAMAGE;
+      if (harm != null && tippedArrow.hasCustomEffect(harm)) return true;
+    } catch (Exception ignored) {
+    }
+
+    // Fallback: reflection for older servers
+    try {
+      Method m = tippedArrow.getClass().getMethod("getBasePotionData");
+      Object potionData = m.invoke(tippedArrow);
+      if (potionData != null) {
+        Method typeMethod = potionData.getClass().getMethod("getType");
+        Object pt = typeMethod.invoke(potionData);
+        if (pt != null) {
+          String s = pt.toString().toUpperCase();
+          return s.contains("INSTANT_DAMAGE") || s.contains("HARMING");
         }
       }
     } catch (Exception ignored) {
-      // can't determine
     }
 
     return false;

@@ -8,15 +8,20 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
 import com.shyamstudio.celestcombatXtra.CelestCombatPro;
+import com.shyamstudio.celestcombatXtra.CelestCombatXtra;
 import com.shyamstudio.celestcombatXtra.configs.RestrictionConfigPaths;
 import com.shyamstudio.celestcombatXtra.combat.CombatManager;
 import com.shyamstudio.celestcombatXtra.language.MessageService;
+
+import java.util.List;
+import java.util.Locale;
 
 public class EnderchestLister implements Listener {
 
@@ -62,14 +67,25 @@ public class EnderchestLister implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!isRegearingEnabled() || !isBlockBundleAccessEnabled()) return;
+        if (!isRegearingEnabled()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        if (!combatManager.isInCombat(player)) return;
 
         if (!isBundleInventory(event.getView())) return;
+        if (!event.getView().getTopInventory().equals(event.getClickedInventory())) return;
 
-        // Cancel any interaction happening inside the bundle GUI so players can't take from / insert into it.
-        if (event.getView().getTopInventory().equals(event.getClickedInventory())) {
+        // Block all bundle access when in combat (if enabled)
+        if (isBlockBundleAccessEnabled() && combatManager.isInCombat(player)) {
+            event.setCancelled(true);
+            messageService.sendMessage(player, "combat_bundle_blocked");
+            return;
+        }
+
+        // Block taking (left/right click) items that are restricted
+        ItemStack current = event.getCurrentItem();
+        if (current == null || current.getType().isAir()) return;
+
+        int amountToTake = event.getClick() == ClickType.RIGHT ? Math.max(1, (current.getAmount() + 1) / 2) : current.getAmount();
+        if (isItemBlockedForTake(player, current.getType(), amountToTake)) {
             event.setCancelled(true);
             messageService.sendMessage(player, "combat_bundle_blocked");
         }
@@ -83,11 +99,64 @@ public class EnderchestLister implements Listener {
 
         if (!isBundleInventory(event.getView())) return;
 
-        // Cancel any drag action into the bundle GUI.
+        // Cancel any drag action involving the bundle GUI.
         if (event.getView().getTopInventory().equals(event.getInventory())) {
             event.setCancelled(true);
             messageService.sendMessage(player, "combat_bundle_blocked");
         }
+    }
+
+    /** Returns true if the player cannot take this material from a bundle (disabled in combat, cooldown, or over limit). */
+    private boolean isItemBlockedForTake(Player player, Material material, int amountToTake) {
+        if (material == null || material.isAir() || amountToTake <= 0) return false;
+
+        // Combat disabled items
+        if (combatManager.isInCombat(player) && isItemDisabledInCombat(material)) {
+            return true;
+        }
+
+        // Ender pearl on cooldown
+        if (material == Material.ENDER_PEARL && combatManager.isEnderPearlOnCooldown(player)) {
+            return true;
+        }
+
+        // Trident on cooldown
+        if (material == Material.TRIDENT && combatManager.isTridentOnCooldown(player)) {
+            return true;
+        }
+
+        // Wind charge on cooldown (CelestCombatXtra)
+        if (material == Material.WIND_CHARGE && plugin instanceof CelestCombatXtra xtra) {
+            var icm = xtra.getItemCooldownManager();
+            if (icm != null && icm.isWindChargeOnCooldown(player)) {
+                return true;
+            }
+        }
+
+        // Item limiter would exceed (CelestCombatXtra)
+        if (plugin instanceof CelestCombatXtra xtra) {
+            var ill = xtra.getItemLimiterListener();
+            if (ill != null && ill.wouldExceedLimit(player, material, amountToTake)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isItemDisabledInCombat(Material material) {
+        String root = RestrictionConfigPaths.itemRestrictionsRoot(plugin.getConfig());
+        if (!plugin.getConfig().getBoolean(root + ".disabled_items.enabled", true)) return false;
+        List<String> disabled = plugin.getConfig().getStringList(root + ".disabled_items.items");
+        if (disabled.isEmpty()) disabled = plugin.getConfig().getStringList(root + ".disabled_items");
+        if (disabled == null || disabled.isEmpty()) return false;
+        String matName = material.name();
+        for (String d : disabled) {
+            if (d != null && (matName.equalsIgnoreCase(d) || matName.contains(d.toUpperCase(Locale.ROOT)))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String regearingRoot() {

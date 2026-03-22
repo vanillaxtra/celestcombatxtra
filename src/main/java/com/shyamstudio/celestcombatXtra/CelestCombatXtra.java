@@ -69,6 +69,11 @@ public class CelestCombatXtra extends CelestCombatPro {
     return itemCooldownManager;
   }
 
+  /** Exposes ItemLimiterListener for bundle/restriction checks. */
+  public ItemLimiterListener getItemLimiterListener() {
+    return itemLimiterListener;
+  }
+
   /**
    * Re-read wind charge + general item cooldown config (after {@code reloadConfig()}).
    *

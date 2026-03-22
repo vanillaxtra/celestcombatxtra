@@ -16,9 +16,11 @@ import com.shyamstudio.celestcombatXtra.configs.WindchargeConfigPaths;
 import com.shyamstudio.celestcombatXtra.cooldown.ItemCooldownManager;
 import com.shyamstudio.celestcombatXtra.language.ColorUtil;
 
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -230,6 +232,8 @@ public class CombatManager {
             long currentTime = System.currentTimeMillis();
 
             // Process all players in a single timer tick
+            Set<UUID> toUpdate = new HashSet<>();
+
             for (Map.Entry<UUID, Long> entry : new HashMap<>(playersInCombat).entrySet()) {
                 UUID playerUUID = entry.getKey();
                 long combatEndTime = entry.getValue();
@@ -250,8 +254,23 @@ public class CombatManager {
                     }
                     continue;
                 }
+                toUpdate.add(playerUUID);
+            }
 
-                // Update countdown display for online players
+            // Include players with pearl or trident cooldown (even when not in combat)
+            // so action bar shows countdown for full cooldown duration, same as wind charge
+            for (Map.Entry<UUID, Long> entry : enderPearlCooldowns.entrySet()) {
+                if (currentTime <= entry.getValue() && Bukkit.getPlayer(entry.getKey()) != null) {
+                    toUpdate.add(entry.getKey());
+                }
+            }
+            for (Map.Entry<UUID, Long> entry : tridentCooldowns.entrySet()) {
+                if (currentTime <= entry.getValue() && Bukkit.getPlayer(entry.getKey()) != null) {
+                    toUpdate.add(entry.getKey());
+                }
+            }
+
+            for (UUID playerUUID : toUpdate) {
                 Player player = Bukkit.getPlayer(playerUUID);
                 if (player != null && player.isOnline()) {
                     updatePlayerCountdown(player, currentTime);
@@ -574,9 +593,11 @@ public class CombatManager {
         enderPearlCooldowns.put(player.getUniqueId(),
                 System.currentTimeMillis() + (enderPearlCooldownSeconds * 1000L));
 
-        // Show real client-side item cooldown overlay.
+        // Show real client-side item cooldown overlay (config duration).
+        // Vanilla applies 1 second on throw, so we re-apply on later ticks to override.
         if (enderPearlCooldownTicks > 0) {
             player.setCooldown(Material.ENDER_PEARL, (int) enderPearlCooldownTicks);
+            scheduleEnderPearlClientCooldownRefresh(player);
         }
     }
 
@@ -648,6 +669,33 @@ public class CombatManager {
         return (int) Math.ceil(Math.max(0, (endTime - currentTime) / 1000.0));
     }
 
+    /** Ticks for {@link Player#setCooldown} (20 ticks = 1 second). */
+    private int getRemainingEnderPearlCooldownTicks(Player player) {
+        if (player == null) return 0;
+        UUID playerUUID = player.getUniqueId();
+        if (!enderPearlCooldowns.containsKey(playerUUID)) return 0;
+        long endTime = enderPearlCooldowns.get(playerUUID);
+        long remainingMs = endTime - System.currentTimeMillis();
+        if (remainingMs <= 0) return 0;
+        return Math.max(1, (int) Math.ceil(remainingMs / 50.0));
+    }
+
+    /** Re-applies client cooldown on later ticks so config duration overrides vanilla's 1 second. */
+    private void scheduleEnderPearlClientCooldownRefresh(Player player) {
+        if (player == null) return;
+        UUID uuid = player.getUniqueId();
+        Runnable apply = () -> {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null || !p.isOnline()) return;
+            int t = getRemainingEnderPearlCooldownTicks(p);
+            if (t > 0) {
+                p.setCooldown(Material.ENDER_PEARL, t);
+            }
+        };
+        Scheduler.runEntityTaskLater(player, apply, 1L);
+        Scheduler.runEntityTaskLater(player, apply, 2L);
+    }
+
     public boolean shouldDisableFlight(Player player) {
         if (player == null) return false;
 
@@ -685,6 +733,12 @@ public class CombatManager {
 
         tridentCooldowns.put(player.getUniqueId(),
                 System.currentTimeMillis() + (tridentCooldownSeconds * 1000L));
+
+        // Show real client-side item cooldown overlay (config duration).
+        if (tridentCooldownTicks > 0) {
+            player.setCooldown(Material.TRIDENT, (int) tridentCooldownTicks);
+            scheduleTridentClientCooldownRefresh(player);
+        }
     }
 
     public boolean isTridentOnCooldown(Player player) {
@@ -766,6 +820,33 @@ public class CombatManager {
 
     public int getRemainingTridentCooldown(Player player) {
         return getRemainingTridentCooldown(player, System.currentTimeMillis());
+    }
+
+    /** Ticks for {@link Player#setCooldown} (20 ticks = 1 second). */
+    private int getRemainingTridentCooldownTicks(Player player) {
+        if (player == null) return 0;
+        UUID playerUUID = player.getUniqueId();
+        if (!tridentCooldowns.containsKey(playerUUID)) return 0;
+        long endTime = tridentCooldowns.get(playerUUID);
+        long remainingMs = endTime - System.currentTimeMillis();
+        if (remainingMs <= 0) return 0;
+        return Math.max(1, (int) Math.ceil(remainingMs / 50.0));
+    }
+
+    /** Re-applies client cooldown on later ticks so config duration sticks. */
+    private void scheduleTridentClientCooldownRefresh(Player player) {
+        if (player == null) return;
+        UUID uuid = player.getUniqueId();
+        Runnable apply = () -> {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null || !p.isOnline()) return;
+            int t = getRemainingTridentCooldownTicks(p);
+            if (t > 0) {
+                p.setCooldown(Material.TRIDENT, t);
+            }
+        };
+        Scheduler.runEntityTaskLater(player, apply, 1L);
+        Scheduler.runEntityTaskLater(player, apply, 2L);
     }
 
     private int getRemainingTridentCooldown(Player player, long currentTime) {
