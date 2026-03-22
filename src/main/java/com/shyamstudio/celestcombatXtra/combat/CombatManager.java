@@ -5,6 +5,9 @@ import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 
 import com.shyamstudio.celestcombatXtra.CelestCombatPro;
@@ -59,6 +62,11 @@ public class CombatManager {
 
     private ItemCooldownManager itemCooldownManager;
     private final CombatNametagManager combatNametagManager;
+    private final Map<UUID, BossBar> combatBossBars = new ConcurrentHashMap<>();
+    private boolean bossBarEnabled;
+    private String bossBarTitleTemplate;
+    private BarColor bossBarColor;
+    private BarStyle bossBarStyle;
 
     public CombatManager(CelestCombatPro plugin) {
         this.plugin = plugin;
@@ -106,6 +114,24 @@ public class CombatManager {
         startGlobalCountdownTimer();
 
         this.combatNametagManager = new CombatNametagManager(plugin, this);
+        loadBossBarConfig();
+    }
+
+    private void loadBossBarConfig() {
+        this.bossBarEnabled = plugin.getConfig().getBoolean("combat.bossbar.enabled", false);
+        this.bossBarTitleTemplate = plugin.getConfig().getString("combat.bossbar.title", "&cCombat: &f%time%s remaining");
+        String colorStr = plugin.getConfig().getString("combat.bossbar.color", "RED");
+        try {
+            this.bossBarColor = BarColor.valueOf(colorStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            this.bossBarColor = BarColor.RED;
+        }
+        String styleStr = plugin.getConfig().getString("combat.bossbar.style", "SOLID");
+        try {
+            this.bossBarStyle = BarStyle.valueOf(styleStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            this.bossBarStyle = BarStyle.SOLID;
+        }
     }
 
     public void setItemCooldownManager(ItemCooldownManager manager) {
@@ -170,6 +196,7 @@ public class CombatManager {
         this.refreshCombatOnWindChargeThrow = plugin.getConfig().getBoolean(
                 WindchargeConfigPaths.root(plugin.getConfig()) + ".refresh_combat_on_throw", false);
         loadWorldTridentSettings();
+        loadBossBarConfig();
     }
 
 
@@ -327,6 +354,33 @@ public class CombatManager {
 
         if (inCombat) {
             combatNametagManager.refresh(player);
+            updateCombatBossBar(player, getRemainingCombatTime(player, currentTime));
+        } else {
+            clearCombatBossBar(player);
+        }
+    }
+
+    private void updateCombatBossBar(Player player, int remainingSeconds) {
+        if (!bossBarEnabled || player == null || !player.isOnline()) return;
+
+        BossBar bar = combatBossBars.computeIfAbsent(player.getUniqueId(), u -> {
+            BossBar b = Bukkit.createBossBar("", bossBarColor, bossBarStyle);
+            b.addPlayer(player);
+            return b;
+        });
+
+        String title = bossBarTitleTemplate.replace("%time%", String.valueOf(remainingSeconds));
+        bar.setTitle(com.shyamstudio.celestcombatXtra.language.ColorUtil.translateHexColorCodes(
+                org.bukkit.ChatColor.translateAlternateColorCodes('&', title)));
+        bar.setProgress(Math.max(0, Math.min(1, remainingSeconds / (double) combatDurationSeconds)));
+        bar.setVisible(true);
+    }
+
+    private void clearCombatBossBar(Player player) {
+        if (player == null) return;
+        BossBar bar = combatBossBars.remove(player.getUniqueId());
+        if (bar != null) {
+            bar.removeAll();
         }
     }
 
@@ -410,6 +464,7 @@ public class CombatManager {
         }
 
         combatNametagManager.clear(player);
+        clearCombatBossBar(player);
 
         playersInCombat.remove(playerUUID);
         combatOpponents.remove(playerUUID);
@@ -431,6 +486,7 @@ public class CombatManager {
         UUID playerUUID = player.getUniqueId();
 
         combatNametagManager.clear(player);
+        clearCombatBossBar(player);
 
         playersInCombat.remove(playerUUID);
         combatOpponents.remove(playerUUID);
@@ -746,5 +802,7 @@ public class CombatManager {
         tridentCooldowns.clear();
 
         combatNametagManager.clearAllOnline();
+        combatBossBars.values().forEach(BossBar::removeAll);
+        combatBossBars.clear();
     }
 }

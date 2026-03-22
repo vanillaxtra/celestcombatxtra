@@ -63,8 +63,17 @@ enchant_limiter_reverted:
 enchant_limiter_item_removed:
   message: "&cAn item had illegal enchant levels and was removed."
 
+item_limiter_denied:
+  message: "&cYou cannot hold more than %limit% of %material%."
+
+item_limiter_excess_removed:
+  message: "&eExcess %material% was removed (limit: %limit%)."
+
 spear_lunge_cooldown:
   action_bar: "&#E94E77Spear lunge: &#FFFFFF%time%s"
+
+spear_disabled:
+  action_bar: "&#E94E77Spears are disabled here."
 
 combat_enderchest_blocked:
   message: "&cYou cannot access enderchests while in combat!"

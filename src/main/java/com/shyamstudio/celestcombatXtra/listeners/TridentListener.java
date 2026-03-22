@@ -18,6 +18,8 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRiptideEvent;
 import org.bukkit.inventory.EquipmentSlot;
+
+import com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent;
 import org.bukkit.inventory.ItemStack;
 
 import com.shyamstudio.celestcombatXtra.CelestCombatPro;
@@ -74,12 +76,15 @@ public class TridentListener implements Listener {
         return null;
     }
 
-    private static void denyTridentInteract(PlayerInteractEvent event) {
+    private static void denyTridentInteract(PlayerInteractEvent event, Action action) {
         event.setCancelled(true);
         event.setUseItemInHand(Event.Result.DENY);
+        if (action == Action.RIGHT_CLICK_BLOCK) {
+            event.setUseInteractedBlock(Event.Result.DENY);
+        }
     }
 
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
     public void onTridentUse(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         Action action = event.getAction();
@@ -95,14 +100,14 @@ public class TridentListener implements Listener {
 
         // Check if trident usage is banned in this world
         if (combatManager.isTridentBanned(player)) {
-            denyTridentInteract(event);
+            denyTridentInteract(event, action);
             sendBannedMessage(player);
             return;
         }
 
         // Check if tridents are blocked during combat
         if (combatManager.isInCombat(player) && isTridentBlockedInCombat()) {
-            denyTridentInteract(event);
+            denyTridentInteract(event, action);
             sendCombatBlockedMessage(player);
             return;
         }
@@ -110,7 +115,7 @@ public class TridentListener implements Listener {
         // Handle riptide tridents differently - we need to prevent the interaction entirely
         if (item.containsEnchantment(Enchantment.RIPTIDE)) {
             if (combatManager.isTridentOnCooldown(player)) {
-                denyTridentInteract(event);
+                denyTridentInteract(event, action);
                 sendCooldownMessage(player);
                 return;
             }
@@ -119,9 +124,14 @@ public class TridentListener implements Listener {
         } else {
             // Handle non-riptide tridents
             if (combatManager.isTridentOnCooldown(player)) {
-                denyTridentInteract(event);
+                denyTridentInteract(event, action);
                 sendCooldownMessage(player);
             }
+        }
+
+        // When allowed to use trident and right-clicking a block, deny block interaction so trident can charge
+        if (action == Action.RIGHT_CLICK_BLOCK) {
+            event.setUseInteractedBlock(Event.Result.DENY);
         }
     }
 
@@ -163,7 +173,16 @@ public class TridentListener implements Listener {
         riptideOriginalLocations.remove(player.getUniqueId());
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onPlayerLaunchProjectile(PlayerLaunchProjectileEvent event) {
+        if (!(event.getProjectile() instanceof Trident)) return;
+        Player player = event.getPlayer();
+        if (!combatManager.isInCombat(player) || !isTridentBlockedInCombat()) return;
+        event.setCancelled(true);
+        sendCombatBlockedMessage(player);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onProjectileLaunch(ProjectileLaunchEvent event) {
         if (event.getEntity() instanceof Trident && event.getEntity().getShooter() instanceof Player) {
             Player player = (Player) event.getEntity().getShooter();
@@ -171,6 +190,7 @@ public class TridentListener implements Listener {
             // Check if trident usage is banned in this world
             if (combatManager.isTridentBanned(player)) {
                 event.setCancelled(true);
+                event.getEntity().remove();
                 sendBannedMessage(player);
                 return;
             }
@@ -178,6 +198,7 @@ public class TridentListener implements Listener {
             // Check if tridents are blocked during combat
             if (combatManager.isInCombat(player) && isTridentBlockedInCombat()) {
                 event.setCancelled(true);
+                event.getEntity().remove();
                 sendCombatBlockedMessage(player);
                 return;
             }
@@ -185,6 +206,7 @@ public class TridentListener implements Listener {
             // Check if trident is on cooldown
             if (combatManager.isTridentOnCooldown(player)) {
                 event.setCancelled(true);
+                event.getEntity().remove();
                 sendCooldownMessage(player);
             } else {
                 // Set cooldown when player successfully launches a trident (non-riptide)

@@ -3,6 +3,7 @@ package com.shyamstudio.celestcombatXtra;
 import com.shyamstudio.celestcombatXtra.cooldown.ItemCooldownManager;
 import com.shyamstudio.celestcombatXtra.listeners.GeneralItemCooldownListener;
 import com.shyamstudio.celestcombatXtra.listeners.HarmingArrowListener;
+import com.shyamstudio.celestcombatXtra.listeners.ItemLimiterListener;
 import com.shyamstudio.celestcombatXtra.listeners.SpearControlListener;
 import com.shyamstudio.celestcombatXtra.listeners.WindChargeListener;
 
@@ -17,6 +18,8 @@ public class CelestCombatXtra extends CelestCombatPro {
   private ItemCooldownManager itemCooldownManager;
   private WindChargeListener windChargeListener;
   private GeneralItemCooldownListener generalItemCooldownListener;
+  private ItemLimiterListener itemLimiterListener;
+  private SpearControlListener spearControlListener;
 
   @Override
   public void onEnable() {
@@ -48,10 +51,22 @@ public class CelestCombatXtra extends CelestCombatPro {
         this
     );
 
-    getServer().getPluginManager().registerEvents(
-        new SpearControlListener(this, itemCooldownManager),
-        this
-    );
+    itemLimiterListener = new ItemLimiterListener(this);
+    getServer().getPluginManager().registerEvents(itemLimiterListener, this);
+
+    spearControlListener = new SpearControlListener(this, itemCooldownManager);
+    getServer().getPluginManager().registerEvents(spearControlListener, this);
+
+    // PlaceholderAPI
+    if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+      new com.shyamstudio.celestcombatXtra.placeholders.CelestCombatPlaceholders(this).register();
+      getLogger().info("PlaceholderAPI expansion registered!");
+    }
+  }
+
+  /** Exposes ItemCooldownManager for PlaceholderAPI wind charge placeholders. */
+  public ItemCooldownManager getItemCooldownManager() {
+    return itemCooldownManager;
   }
 
   /**
@@ -66,11 +81,22 @@ public class CelestCombatXtra extends CelestCombatPro {
     if (generalItemCooldownListener != null) {
       return generalItemCooldownListener.reloadFromConfig();
     }
+    if (itemLimiterListener != null) {
+      itemLimiterListener.reloadLimits();
+    }
     return Collections.emptyList();
   }
 
   @Override
   public void onDisable() {
+    if (spearControlListener != null) {
+      spearControlListener.shutdown();
+      spearControlListener = null;
+    }
+    if (itemLimiterListener != null) {
+      itemLimiterListener.shutdown();
+      itemLimiterListener = null;
+    }
     if (itemCooldownManager != null) {
       itemCooldownManager.shutdown();
       itemCooldownManager = null;

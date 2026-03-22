@@ -1,0 +1,164 @@
+================================================================================
+CELESTCOMBAT-XTRA — MANUAL TEST CHECKLIST
+================================================================================
+Use this after pulling changes / before a release. Enable each feature in
+config.yml, /ccx reload (or restart), then verify in-game on Paper 1.21+.
+
+Legend: [ ] = not tested   [x] = passed
+
+--------------------------------------------------------------------------------
+CORE COMBAT (CombatListeners + CombatManager)
+--------------------------------------------------------------------------------
+[x] Two players hit each other → both get combat tag; timer counts down in
+    action bar (combat_countdown / merged pearl/trident lines as configured).
+[x] Combat expires → combat_expired message; nametag prefix/suffix removed if
+    nametag feature was enabled.
+[x] /cc removetag (self / other / world / all) → tags clear as expected.
+[x] Combat log on quit → punishment + CombatEndEvent path (if enabled).
+[x] Command blocking (blacklist/whitelist) → blocked commands fail in combat.
+[x] disable_flight: creative flight turns off when tagged (if true).
+
+--------------------------------------------------------------------------------
+COMBAT NAMETAG (combat.nametag.*)
+--------------------------------------------------------------------------------
+[x] enabled: true → scoreboard team prefix/suffix appear above name while tagged.
+[x] Placeholders: %opponent%, %opponent_display%, %time%, %time_seconds% update
+    each second (time = remaining combat seconds).
+[x] & color codes render correctly in prefix/suffix.
+[x] After combat ends → nametag returns to normal (team entry removed).
+[x] Both players tagged → each sees their own prefix/suffix with the other as
+    opponent.
+
+--------------------------------------------------------------------------------
+ITEM RESTRICTIONS — DISABLED ITEMS (ItemRestrictionListener)
+--------------------------------------------------------------------------------
+[x] Consumables in disabled_items list blocked in combat (e.g. chorus).
+[x] ELYTRA: gliding stopped while in combat (move listener).
+[x] Action bar / messages for blocked use.
+
+--------------------------------------------------------------------------------
+ELYTRA (ElytraCombatAbuseListener — config: elytra:)
+--------------------------------------------------------------------------------
+[x] elytra.enabled false → listener off (legacy: combat.item_restrictions.elytra_abuse.* if no elytra: block).
+[x] require_elytra_in_disabled_list: ELYTRA must stay in item_restrictions.disabled_items when true.
+[x] In combat: glide start + firework boost blocked; abuse_prevention.enabled false → no strikes/penalties.
+[x] abuse_prevention true: after strikes_before_action → elytra to inventory, or if full:
+    full_inventory_action TEMP_BREAK (durability restore after seconds) or DROP at feet.
+[x] Strikes reset on new combat (not wasAlreadyInCombat) / CombatEndEvent / quit.
+[x] Legacy configs: old paths under item_restrictions.elytra_abuse still read if elytra: is absent.
+
+--------------------------------------------------------------------------------
+WIND CHARGE (WindChargeListener + ItemCooldownManager — config: windcharge.*)
+--------------------------------------------------------------------------------
+[x] Legacy windcharge_control.* still works if windcharge: is missing from config.
+[x] Cooldown duration matches config; Player#setCooldown shows on item (including
+    after first use — deferred re-apply ticks).
+[x] In combat: action bar merges combat + wind like pearl (combat_wind_countdown
+    when only combat + wind).
+[x] windcharge_cooldown has no sound (action bar only paths).
+[x] disable_in_combat / disable_out_of_combat / in_combat_only respected.
+[x] refresh_combat_on_throw extends combat timer when enabled.
+
+--------------------------------------------------------------------------------
+GENERAL ITEM COOLDOWNS (GeneralItemCooldownListener + ItemCooldownManager)
+--------------------------------------------------------------------------------
+[x] Each configured material respects duration (cooldown: "1s" or map/number),
+    cooldown_out_of_combat (false = only while tagged), disable_in/out combat, meta
+    (e.g. potion_type) where used.
+[x] Snowball/egg/spear throw paths apply cooldown on ProjectileLaunchEvent.
+[x] Block place cooldown entries (if any) work.
+[x] Mace (mace.*): attack_mode, duration, allow_out_of_combat; legacy mace_restrictions still loads if mace absent.
+[x] Mace on cooldown: no arm swing (Paper PlayerArmSwingEvent); mace_cooldown action bar on block + merged combat bar.
+
+
+IDKK?????????????????????????????
+--------------------------------------------------------------------------------
+SPEAR CONTROL (SpearControlListener — spear_control.*)  [1.21+ SPEAR material]
+--------------------------------------------------------------------------------
+[ ] lunge_cooldown: right-click air with spear in main hand starts cooldown
+    next tick; repeat within duration is cancelled + action bar spear_lunge_cooldown.
+[ ] bypass_permission skips lunge rules.
+[ ] disable_damage: true → spear melee and spear projectile deal no damage.
+[ ] Note: item_restrictions.cooldowned_items can ALSO apply to SPEAR via
+    GeneralItemCooldownListener — avoid conflicting durations or accept both.
+
+--------------------------------------------------------------------------------
+ENDER PEARL (EnderPearlListener)
+--------------------------------------------------------------------------------
+[x] Cooldowns, in_combat_only, per-world, block_in_combat as configured.
+[x] Merged action bar with wind + general item cooldowns when itemCooldownManager set.
+
+--------------------------------------------------------------------------------
+TRIDENT (TridentListener)
+--------------------------------------------------------------------------------
+[x] Cooldowns, banned worlds, block_in_combat, riptide/throw rules as configured.
+[x] Merged action bar with extra cooldown segments.
+[x] RIGHT_CLICK_AIR: bans / combat block / cooldown still apply (inventory hand fallback;
+    setUseItemInHand(DENY) + cancel — not only when aiming at a block).
+
+--------------------------------------------------------------------------------
+EXPLOSIVE CONTROLS (ExplosiveControlsListener — explosive_controls.*)
+--------------------------------------------------------------------------------
+[x] Master enabled: true.
+[x] end_crystal.prevent_placement → cannot place crystal; action bar message.
+[x] respawn_anchor.prevent_use → cannot charge/use anchor; setUseItemInHand/Block DENY + LOW priority.
+[x] bed_nether_end.prevent_use → cannot use bed in Nether / End (same denial).
+[x] tnt_minecart.prevent_explosion → ExplosionPrimeEvent cancelled for minecart.
+[x] explosion_break_blocks: false → EntityExplodeEvent / BlockExplodeEvent block
+    list cleared for crystal, minecart, anchor, bed respectively.
+[x] explosion_damage_entities: false OR prevent_use: true → anchor/bed explosion player damage
+    cancelled via recent BlockExplodeEvent center (source block is gone before damage) + legacy
+    DamageSource location when still accurate.
+[x] Re-test with all false/true combinations you plan to use on production.
+
+--------------------------------------------------------------------------------
+ENCHANT LIMITER (EnchantLimiterListener — enchant_limiter.*)
+--------------------------------------------------------------------------------
+[x] enabled: true; limits use registry IDs (e.g. protection: 4, sharpness: 5).
+[x] violation_action REVERT → levels clamped; enchant_limiter_reverted message.
+[x] violation_action DELETE → whole stack removed; enchant_limiter_item_removed.
+[x] violation_action NONE / IGNORE → no change (for auditing).
+[x] Enchanted books (stored enchants) are handled.
+[x] celestcombatxtra.bypass.enchant_limit skips scanning.
+[x] Join, inventory click, close, pickup trigger re-scan (delayed task).
+
+--------------------------------------------------------------------------------
+HARMING ARROW (HarmingArrowListener)
+--------------------------------------------------------------------------------
+[ ] Instant damage tipped arrows behave per your configured rules (combat / worlds).
+
+--------------------------------------------------------------------------------
+REGEARING / ENDERCHEST / SHULKER / BUNDLE (EnderchestLister + config)
+--------------------------------------------------------------------------------
+[ ] Blocked in combat when regearing.* flags true.
+
+
+
+--------------------------------------------------------------------------------
+COMMANDS
+--------------------------------------------------------------------------------
+[ ] /ccx (or aliases) help, reload, tag, removetag, killreward, newbie, config
+    (celestcombatxtra.command.config), etc. Tab-complete works.
+[ ] Config subcommand: browse keys, set typed values, reload if implemented.
+
+
+
+--------------------------------------------------------------------------------
+PERMISSIONS (plugin.yml)
+--------------------------------------------------------------------------------
+[ ] celestcombatxtra.bypass.tag
+[ ] celestcombatxtra.bypass.enchant_limit
+[ ] celestcombatxtra.bypass.spear_control
+[ ] celestcombatxtra.command.*
+
+--------------------------------------------------------------------------------
+FOLIA (if you use it)
+--------------------------------------------------------------------------------
+[ ] Scheduler entity/region tasks: wind defer, elytra restore, enchant delayed
+    scan, spear delayed cooldown — no cross-region errors in logs.
+
+
+
+================================================================================
+END
+================================================================================

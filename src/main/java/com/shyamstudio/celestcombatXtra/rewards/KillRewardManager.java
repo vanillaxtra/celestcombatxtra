@@ -230,9 +230,7 @@ public class KillRewardManager {
         // Execute commands on main thread
         Scheduler.runTask(() -> {
             for (String command : rewardCommands) {
-                String processedCommand = command
-                        .replace("%killer%", killer.getName())
-                        .replace("%victim%", victim.getName());
+                String processedCommand = replaceKillRewardPlaceholders(command, killer, victim);
 
                 try {
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), processedCommand);
@@ -249,6 +247,35 @@ public class KillRewardManager {
                 sendKillRewardMessage(killer, victim);
             }
         });
+    }
+
+    /**
+     * Replaces kill reward placeholders in a string.
+     * Available: %killer%, %victim%, %killer_uuid%, %victim_uuid%, %killer_health%, %victim_health%,
+     * %killer_max_health%, %victim_max_health%, %world%, %world_display%, %x%, %y%, %z%
+     */
+    private String replaceKillRewardPlaceholders(String str, Player killer, Player victim) {
+        if (str == null) return "";
+        String out = str
+                .replace("%killer%", killer.getName())
+                .replace("%victim%", victim != null ? victim.getName() : "Unknown")
+                .replace("%killer_uuid%", killer.getUniqueId().toString())
+                .replace("%victim_uuid%", victim != null ? victim.getUniqueId().toString() : "")
+                .replace("%killer_health%", String.valueOf((int) killer.getHealth()))
+                .replace("%victim_health%", victim != null ? String.valueOf((int) victim.getHealth()) : "0")
+                .replace("%killer_max_health%", String.valueOf((int) killer.getMaxHealth()))
+                .replace("%victim_max_health%", victim != null ? String.valueOf((int) victim.getMaxHealth()) : "20");
+        if (victim != null) {
+            org.bukkit.Location loc = victim.getLocation();
+            out = out.replace("%world%", loc.getWorld().getName())
+                    .replace("%world_display%", loc.getWorld().getName())
+                    .replace("%x%", String.valueOf(loc.getBlockX()))
+                    .replace("%y%", String.valueOf(loc.getBlockY()))
+                    .replace("%z%", String.valueOf(loc.getBlockZ()));
+        } else {
+            out = out.replace("%world%", "").replace("%world_display%", "").replace("%x%", "0").replace("%y%", "0").replace("%z%", "0");
+        }
+        return out;
     }
 
     /**

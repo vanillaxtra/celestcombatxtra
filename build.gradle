@@ -13,6 +13,10 @@ repositories {
         url = "https://repo.papermc.io/repository/maven-public/"
     }
     maven {
+        name = "placeholderapi"
+        url = "https://repo.helpch.at/releases"
+    }
+    maven {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
@@ -50,6 +54,7 @@ dependencies {
     }
     
     implementation 'com.github.GriefPrevention:GriefPrevention:17.0.0'
+    compileOnly 'me.clip:placeholderapi:2.11.6'
 }
 
 tasks {

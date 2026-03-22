@@ -16,7 +16,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockExplodeEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
@@ -44,7 +43,9 @@ public final class ExplosiveControlsListener implements Listener {
 
   private enum ExplosiveKind {
     RESPAWN_ANCHOR,
-    BED_NETHER_END
+    BED_NETHER_END,
+    END_CRYSTAL,
+    TNT_MINECART
   }
 
   private record ExplosionTag(Location center, long timeMs, ExplosiveKind kind) {}
@@ -91,13 +92,23 @@ public final class ExplosiveControlsListener implements Listener {
     return plugin.getConfig().getBoolean("explosive_controls.enabled", false);
   }
 
-  @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-  public void onCrystalPlace(BlockPlaceEvent event) {
+  /** Prevents placement; also disallows respawning the Ender Dragon (crystals required for respawn).
+   * End crystals are entities not blocks - BlockPlaceEvent does not fire. Use PlayerInteractEvent. */
+  @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+  public void onCrystalPlace(PlayerInteractEvent event) {
     if (!master()) return;
-    if (event.getBlock().getType() != Material.END_CRYSTAL) return;
     if (!plugin.getConfig().getBoolean("explosive_controls.end_crystal.prevent_placement", false)) return;
+    if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
-    event.setCancelled(true);
+    Block block = event.getClickedBlock();
+    if (block == null) return;
+    Material clicked = block.getType();
+    if (clicked != Material.OBSIDIAN && clicked != Material.BEDROCK) return;
+
+    org.bukkit.inventory.ItemStack item = event.getItem();
+    if (item == null || item.getType() != Material.END_CRYSTAL) return;
+
+    denyInteract(event);
     notify(event.getPlayer(), "explosive_denied_end_crystal");
   }
 
@@ -124,6 +135,12 @@ public final class ExplosiveControlsListener implements Listener {
     Block block = event.getClickedBlock();
     if (block == null || block.getType() != Material.RESPAWN_ANCHOR) return;
 
+    World.Environment env = block.getWorld().getEnvironment();
+    boolean allowInNether = plugin.getConfig().getBoolean("explosive_controls.respawn_anchor.allow_in_nether", true);
+    // Only allow in nether when allow_in_nether is true; always deny in overworld and end
+    if (env == World.Environment.NETHER && allowInNether) {
+      return;
+    }
     denyInteract(event);
     notify(event.getPlayer(), "explosive_denied_anchor");
   }
@@ -143,6 +160,10 @@ public final class ExplosiveControlsListener implements Listener {
     Entity e = event.getEntity();
 
     if (e instanceof EnderCrystal) {
+      boolean stripDamage = !plugin.getConfig().getBoolean("explosive_controls.end_crystal.explosion_damage_entities", true);
+      if (stripDamage && e.getLocation() != null) {
+        registerExplosionTag(e.getLocation(), ExplosiveKind.END_CRYSTAL);
+      }
       if (!plugin.getConfig().getBoolean("explosive_controls.end_crystal.explosion_break_blocks", true)) {
         event.blockList().clear();
       }
@@ -150,6 +171,10 @@ public final class ExplosiveControlsListener implements Listener {
     }
 
     if (e.getType() == EntityType.TNT_MINECART) {
+      boolean stripDamage = !plugin.getConfig().getBoolean("explosive_controls.tnt_minecart.explosion_damage_entities", true);
+      if (stripDamage && e.getLocation() != null) {
+        registerExplosionTag(e.getLocation(), ExplosiveKind.TNT_MINECART);
+      }
       if (!plugin.getConfig().getBoolean("explosive_controls.tnt_minecart.explosion_break_blocks", true)) {
         event.blockList().clear();
       }
@@ -159,8 +184,9 @@ public final class ExplosiveControlsListener implements Listener {
   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
   public void onBlockExplode(BlockExplodeEvent event) {
     if (!master()) return;
+    // getBlock().getType() returns AIR because block is destroyed before event; use getExplodedBlockState()
+    Material type = event.getExplodedBlockState().getType();
     Block b = event.getBlock();
-    Material type = b.getType();
 
     if (type == Material.RESPAWN_ANCHOR) {
       boolean stripDamage = !plugin.getConfig().getBoolean(
@@ -218,6 +244,18 @@ public final class ExplosiveControlsListener implements Listener {
       if (!plugin.getConfig().getBoolean("explosive_controls.tnt_minecart.explosion_damage_entities", true)) {
         event.setCancelled(true);
       }
+      return;
+    }
+
+    // When getDirectEntity() is null (e.g. entity removed before damage), use explosion proximity tags
+    if (!plugin.getConfig().getBoolean("explosive_controls.end_crystal.explosion_damage_entities", true)
+        && isNearExplosionTag(player, ExplosiveKind.END_CRYSTAL)) {
+      event.setCancelled(true);
+      return;
+    }
+    if (!plugin.getConfig().getBoolean("explosive_controls.tnt_minecart.explosion_damage_entities", true)
+        && isNearExplosionTag(player, ExplosiveKind.TNT_MINECART)) {
+      event.setCancelled(true);
       return;
     }
 

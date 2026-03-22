@@ -11,10 +11,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
+
+import io.papermc.paper.event.entity.EntityLoadCrossbowEvent;
 import org.bukkit.potion.PotionType;
 
 import com.shyamstudio.celestcombatXtra.CelestCombatPro;
@@ -100,8 +103,40 @@ public final class HarmingArrowListener implements Listener {
 
     if (!isHarmingArrowProjectile(arrow)) return;
 
-    // Enforce no damage (keep projectile behavior).
-    event.setDamage(0.0);
+    event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+  public void onCrossbowLoad(EntityLoadCrossbowEvent event) {
+    if (crossbowsAllowHarming) return;
+    if (!(event.getEntity() instanceof Player player)) return;
+
+    // Crossbow consumes arrows: opposite hand first, then hotbar 0-8. Cancel only if the first arrow would be harming.
+    ItemStack firstArrow = findFirstCrossbowArrow(player, event.getHand());
+    if (firstArrow != null && isHarmingArrowItem(firstArrow)) {
+      event.setCancelled(true);
+      plugin.getMessageService().sendMessage(player, "harming_disallowed");
+      player.updateInventory();
+    }
+  }
+
+  /** First arrow in crossbow consumption order: opposite hand first, then hotbar slots 0-8. */
+  private ItemStack findFirstCrossbowArrow(Player player, EquipmentSlot crossbowHand) {
+    ItemStack otherHand = crossbowHand == EquipmentSlot.HAND
+        ? player.getInventory().getItemInOffHand()
+        : player.getInventory().getItemInMainHand();
+    if (isArrowItem(otherHand)) return otherHand;
+    for (int i = 0; i < 9; i++) {
+      ItemStack s = player.getInventory().getItem(i);
+      if (isArrowItem(s)) return s;
+    }
+    return null;
+  }
+
+  private boolean isArrowItem(ItemStack item) {
+    if (item == null || item.getType() == Material.AIR) return false;
+    return item.getType() == Material.ARROW || item.getType() == Material.TIPPED_ARROW
+        || item.getType() == Material.SPECTRAL_ARROW;
   }
 
   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

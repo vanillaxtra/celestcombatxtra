@@ -74,6 +74,13 @@ combat:
     prefix: "&c⚔ "
     suffix: " &7vs &f%opponent% &8(%time%s)"
 
+  # Optional boss bar showing combat countdown (off by default)
+  bossbar:
+    enabled: false
+    title: "&c⚔ Combat: &f%time%s remaining"
+    color: RED    # BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
+    style: SOLID  # SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+
 #---------------------------------------------------
 #              ITEM RESTRICTIONS
 #---------------------------------------------------
@@ -144,6 +151,8 @@ explosive_controls:
     explosion_break_blocks: true
   respawn_anchor:
     prevent_use: false
+    # When prevent_use is true, allow respawn anchors in the nether (they work there in vanilla)
+    allow_in_nether: true
     # When false (or prevent_use true), player damage from anchor blasts is cancelled even though
     # the anchor block is already destroyed when damage is applied (uses explosion position cache).
     explosion_damage_entities: true
@@ -167,9 +176,50 @@ enchant_limiter:
   enabled: false
   bypass_permission: celestcombatxtra.bypass.enchant_limit
   violation_action: REVERT
+  # Per-world: when specified, overrides global enabled for that world
+  worlds:
+    # world: true
+    # world_nether: false
   limits:
     protection: 4
     sharpness: 5
+
+#---------------------------------------------------
+#              ITEM LIMITER
+#---------------------------------------------------
+# Per-player limits: max amount of each material a player can hold.
+# Materials use Bukkit names (uppercase), e.g. DIAMOND, DIAMOND_BLOCK
+item_limiter:
+  enabled: false
+  bypass_permission: celestcombatxtra.bypass.item_limit
+  # Per-world: when specified, overrides global enabled for that world
+  worlds:
+    # world: true
+    # world_nether: false
+  # When false, OP players are also limited (bypass permission is ignored for OPs)
+  op_bypasses: false
+  # When true, excess items are dropped at the player's feet; when false, they are removed
+  drop_excess: true
+  # Grace period in ticks (3 = ~150ms) before scanning - helps avoid race conditions
+  grace_period_ticks: 3
+  # Ticks to skip scanning after F-key hand swap - prevents totem/etc dropping during swap
+  swap_grace_ticks: 20
+  # Scan interval in ticks (10 = every 0.5s) - higher = less load, slower excess removal
+  scan_interval_ticks: 10
+  # Max players scanned per tick - spreads load to avoid lag spikes
+  players_per_tick: 8
+  # Send excess_removed message on 1st occurrence, then every N times (0 = never)
+  message_interval: 100
+  # Minimum ticks between deny messages per player per material (100 = 5 sec)
+  deny_message_cooldown_ticks: 100
+  # Set false to disable excess_removed messages entirely
+  send_excess_messages: true
+  limits:
+    DIAMOND: 64
+    DIAMOND_BLOCK: 16
+    NETHERITE_INGOT: 3
+    TOTEM_OF_UNDYING: 1
+    GOLDEN_APPLE: 5
 
 #---------------------------------------------------
 #              SPEAR (1.21+)
@@ -177,6 +227,8 @@ enchant_limiter:
 spear_control:
   enabled: false
   bypass_permission: celestcombatxtra.bypass.spear_control
+  # If true, blocks all spear use (right-click lunge and left-click jab); works even when enabled is false
+  disable_spears: false
   lunge_cooldown:
     enabled: true
     duration: "2s"
@@ -308,7 +360,9 @@ kill_rewards:
   enabled: true
 
   # Commands executed when player gets a kill
-  # Variables: %killer% = killer's name, %victim% = victim's name
+  # Placeholders: %killer%, %victim%, %killer_uuid%, %victim_uuid%,
+  # %killer_health%, %victim_health%, %killer_max_health%, %victim_max_health%,
+  # %world%, %world_display%, %x%, %y%, %z% (victim's location)
   commands:
     - "donutcratecore shards give %killer% 10"
     # add more commands as needed

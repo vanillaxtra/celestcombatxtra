@@ -42,40 +42,48 @@ public final class EnchantLimiterListener implements Listener {
     return plugin.getConfig().getBoolean("enchant_limiter.enabled", false);
   }
 
+  private boolean enabledInWorld(String worldName) {
+    if (!enabled()) return false;
+    var sec = plugin.getConfig().getConfigurationSection("enchant_limiter.worlds");
+    if (sec == null || sec.getKeys(false).isEmpty()) return true;
+    return plugin.getConfig().getBoolean("enchant_limiter.worlds." + worldName, true);
+  }
+
   private String bypassPerm() {
     return plugin.getConfig().getString("enchant_limiter.bypass_permission", "celestcombatxtra.bypass.enchant_limit");
   }
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void onJoin(PlayerJoinEvent event) {
-    if (!enabled()) return;
     Player player = event.getPlayer();
+    if (!enabledInWorld(player.getWorld().getName())) return;
     Scheduler.runEntityTaskLater(player, () -> scanPlayer(player), 2L);
   }
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void onClose(InventoryCloseEvent event) {
-    if (!enabled()) return;
     if (!(event.getPlayer() instanceof Player player)) return;
+    if (!enabledInWorld(player.getWorld().getName())) return;
     Scheduler.runEntityTaskLater(player, () -> scanPlayer(player), 1L);
   }
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void onClick(InventoryClickEvent event) {
-    if (!enabled()) return;
     if (!(event.getWhoClicked() instanceof Player player)) return;
+    if (!enabledInWorld(player.getWorld().getName())) return;
     Scheduler.runEntityTaskLater(player, () -> scanPlayer(player), 1L);
   }
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void onPickup(EntityPickupItemEvent event) {
-    if (!enabled()) return;
     if (!(event.getEntity() instanceof Player player)) return;
+    if (!enabledInWorld(player.getWorld().getName())) return;
     Scheduler.runEntityTaskLater(player, () -> scanPlayer(player), 1L);
   }
 
   public void scanPlayer(Player player) {
     if (player == null || !player.isOnline()) return;
+    if (!enabledInWorld(player.getWorld().getName())) return;
     if (player.hasPermission(bypassPerm())) return;
 
     Map<Enchantment, Integer> limits = loadLimits();

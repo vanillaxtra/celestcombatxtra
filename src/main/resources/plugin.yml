@@ -8,6 +8,7 @@ folia-supported: true
 
 soft-depend:
   - WorldGuard
+  - PlaceholderAPI
   - Multiverse-Core
   - Worlds
 
@@ -22,16 +23,19 @@ permissions:
     description: Allows players to use all commands of CelestCombat Xtra
     default: op
   celestcombatxtra.update.notify:
-    description: Allows players to receive update notifications
+    description: Receive update notifications
     default: op
   celestcombatxtra.bypass.tag:
-    description: Allows players to bypass being tagged in combat
+    description: Bypass being tagged in combat (no combat log punishment)
     default: false
   celestcombatxtra.command.config:
-    description: Allows players to browse and edit plugin config via command
+    description: Browse and edit plugin config in-game
     default: op
   celestcombatxtra.bypass.enchant_limit:
     description: Bypass enchant level limits
+    default: op
+  celestcombatxtra.bypass.item_limit:
+    description: Bypass item limiter restrictions (per-material caps)
     default: op
   celestcombatxtra.bypass.spear_control:
     description: Bypass spear lunge cooldown and spear damage rules
