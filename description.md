@@ -15,6 +15,7 @@ It prevents combat logging, blocks escape mechanics, integrates with major prote
 * **Flight control** – Disable creative flight while tagged.
 * **Nametag & boss bar** – Optional opponent name and countdown.
 
+![Configurable Nametag](assets/configurablenametag.png)
 ![Combat Timer](assets/combattimer.png)
 
 ---
@@ -56,6 +57,7 @@ Add items with cooldowns in `cooldowned_items`. After use, the item is locked fo
 * Applies in combat and/or out of combat (configurable).
 
 ![Configurable Cooldowns](assets/configurablecooldowns.png)
+![Item Cooldown](assets/itemcooldown.png)
 
 ---
 
