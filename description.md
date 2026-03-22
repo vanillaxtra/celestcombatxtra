@@ -69,11 +69,6 @@ Add items with cooldowns in `cooldowned_items`. After use, the item is locked fo
   * **TEMP_BREAK** – If inventory is full, the elytra is broken for 30 seconds and then restored.
   * **DROP** – If inventory is full, the elytra is dropped at your feet.
 
-Chat messages:
-* *"You cannot use Elytra while in combat! (x2)"*
-* *"Your elytra was unequipped after repeated use in combat."*
-* *"Your inventory was full — your elytra was broken for 30s. Durability will return."*
-
 A crossed-out elytra icon shows when elytra use is blocked.
 
 ![Elytra](assets/elytra.png)
@@ -136,7 +131,7 @@ Stops overpowered enchants (e.g. Sharpness 255).
 * **REVERT** – Clamp to max level (e.g. Sharpness V).
 * **DELETE** – Remove the item.
 * Per-world and bypass permission.
-* Placeholders like Protection 4, Sharpness 5.
+* You can see that this max stick gets sharpness reverted.
 
 ![Enchant Limiter](assets/enchantsreverted.png)
 
@@ -202,8 +197,19 @@ Run commands when a player gets a kill.
 # 🔌 Integrations
 
 ## PlaceholderAPI
-* `%celestcombat_in_combat%`, `%celestcombat_time_left%`, `%celestcombat_opponent%`
-* `%celestcombat_pearl_cooldown%`, `%celestcombat_trident_cooldown%`, `%celestcombat_wind_cooldown%`
+
+| Placeholder | Description |
+|-------------|-------------|
+| `%celestcombat_in_combat%` | `true` or `false` |
+| `%celestcombat_time_left%` | Remaining combat seconds |
+| `%celestcombat_opponent%` | Opponent name |
+| `%celestcombat_opponent_display%` | Opponent display name |
+| `%celestcombat_pearl_cooldown%` | Pearl cooldown seconds |
+| `%celestcombat_trident_cooldown%` | Trident cooldown seconds |
+| `%celestcombat_wind_cooldown%` | Wind charge cooldown seconds |
+| `%celestcombat_pearl_ready%` | `true` or `false` |
+| `%celestcombat_trident_ready%` | `true` or `false` |
+| `%celestcombat_wind_ready%` | `true` or `false` |
 
 ## WorldGuard
 * Safe-zone barriers and push-back.
