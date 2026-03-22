@@ -15,7 +15,7 @@ It prevents combat logging, blocks escape mechanics, integrates with major prote
 * **Optional nametag prefix/suffix** showing opponent and time
 * **Optional boss bar** for combat countdown (off by default)
 
-![Combat Timer](assets/combattimer.png)
+![Combat Timer](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/0ab2aa0d491927b19399962e75d3216dc273fc8f/assets/combattimer.png)
 
 *Combat indicator and cooldowns displayed during PvP engagements*
 
@@ -50,7 +50,7 @@ Block or cooldown specific items during combat:
 * Spears (1.21+)
 * Custom configurable items
 
-![Item Cooldowns](assets/itemcooldowns.png)
+![Item Cooldowns](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/0ab2aa0d491927b19399962e75d3216dc273fc8f/assets/itemcooldowns.png)
 
 *Multiple configurable cooldowns displayed during PvP*
 
@@ -97,7 +97,7 @@ CelestCombat-Xtra integrates with **WorldGuard** to prevent players from escapin
 
 All barriers are rendered **client-side for minimal server impact**.
 
-![Safe Zone Barrier](assets/safezonebarrier.png)
+![Safe Zone Barrier](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/0ab2aa0d491927b19399962e75d3216dc273fc8f/assets/safezonebarrier.png)
 
 *Safe zone barrier visualization near no-PvP regions*
 
