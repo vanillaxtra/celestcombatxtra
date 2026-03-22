@@ -6,172 +6,221 @@ It prevents combat logging, blocks escape mechanics, integrates with major prote
 
 ---
 
-# ⚔️ Smart Combat System
+# ⚔️ Combat System
 
-* **Intelligent Combat Tagging** with configurable duration
-* **Whitelist or Blacklist command blocking** during combat
-* **Admin action protection** – staff kicks/bans won't trigger punishments
-* **Flight control** – disable creative flight while tagged
-* **Optional nametag prefix/suffix** showing opponent and time
-* **Optional boss bar** for combat countdown (off by default)
+* **Combat tagging** – Players who hit or get hit stay in combat for a set duration (e.g. 20 seconds).
+* **Action bar timer** – Shows remaining combat time in blue text (e.g. *"Combat: 19s"*).
+* **Command blocking** – Blacklist or whitelist commands during combat (e.g. block `/tpa`, `/home`).
+* **Admin protection** – Staff kicks/bans don’t trigger combat-log penalties.
+* **Flight control** – Disable creative flight while tagged.
+* **Nametag & boss bar** – Optional opponent name and countdown.
 
-![Combat Timer](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/0ab2aa0d491927b19399962e75d3216dc273fc8f/assets/combattimer.png)
-
-*Combat indicator and cooldowns displayed during PvP engagements*
+![Combat Timer](assets/combattimer.png)
 
 ---
 
-# 🎯 Advanced PvP Restriction Control
+# 📋 Action Bar Cooldowns
 
-CelestCombat-Xtra gives full control over PvP escape mechanics and item balance.
+All timers appear in one line above the hotbar, separated by vertical bars.
 
-### Ender Pearl Systems
+* **Combat** – Blue countdown until you can leave combat.
+* **Ender Pearl** – Red countdown before you can use pearls again.
+* **Trident** – Light blue countdown for trident throws.
+* **Wind Charge** – Light blue countdown for wind charges.
+* **Mace** – Red countdown after mace hits.
 
-* Combat timer refresh when pearls land
-* **Ender Pearl cooldown system**
-* Per-world cooldown control
-* Block pearls entirely in combat
+Items on cooldown also show a **white wipe overlay** on the hotbar so you can see at a glance which items are ready.
 
-### Trident Restrictions
-
-* Per-world trident bans
-* Configurable cooldown system
-* Combat timer refresh support
-* Block throw/riptide in combat
-
-### Combat Item Restrictions
-
-Block or cooldown specific items during combat:
-
-* Elytra (with abuse prevention – glide/firework block, strike counter)
-* Chorus Fruit
-* Wind charges
-* Maces
-* Spears (1.21+)
-* Custom configurable items
-
-![Item Cooldowns](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/0ab2aa0d491927b19399962e75d3216dc273fc8f/assets/itemcooldowns.png)
-
-*Multiple configurable cooldowns displayed during PvP*
+![Cooldowns](assets/cooldowns.png)
 
 ---
 
-# 🛡️ Elytra Abuse Prevention
+# 🚫 Configurable Item Blocking
 
-Advanced elytra exploit protection for PvP servers.
+## Disabled Items (in combat)
 
-* **Glide & firework blocking** in combat
-* **Strike counter** – penalize repeated attempts (temp break or drop)
-* Configurable strikes before action
-* Full inventory handling (TEMP_BREAK or DROP)
+Add items to `disabled_items` in `config.yml`. While in combat, players **cannot use** these items at all.
+
+**Example:** `SUSPICIOUS_STEW`, `ELYTRA`, custom items.
+
+Players see a pink action bar message: *"You cannot use [item] while in combat!"*
+
+![Configurable Blocking](assets/configurableblocking.png)
+
+## Cooldowned Items
+
+Add items with cooldowns in `cooldowned_items`. After use, the item is locked for a set time (e.g. 10 seconds for Chorus Fruit).
+
+* Action bar shows the countdown (e.g. *"Chorus Fruit: 9s"*).
+* Physical cooldown overlay on the item in the hotbar.
+* Applies in combat and/or out of combat (configurable).
+
+![Configurable Cooldowns](assets/configurablecooldowns.png)
+
+---
+
+# 🛡️ Elytra Combat Rules
+
+* **Block glide & fireworks** – No flying or firework boosting while in combat.
+* **Strike counter** – After repeated tries (e.g. 2 strikes), the plugin acts:
+  * **Unequip** – Elytra is moved to inventory.
+  * **TEMP_BREAK** – If inventory is full, the elytra is broken for 30 seconds and then restored.
+  * **DROP** – If inventory is full, the elytra is dropped at your feet.
+
+Chat messages:
+* *"You cannot use Elytra while in combat! (x2)"*
+* *"Your elytra was unequipped after repeated use in combat."*
+* *"Your inventory was full — your elytra was broken for 30s. Durability will return."*
+
+A crossed-out elytra icon shows when elytra use is blocked.
+
+![Elytra](assets/elytra.png)
+
+---
+
+# 🔮 Ender Pearl & Trident
+
+### Ender Pearl
+* Cooldown with action bar timer.
+* Optional block in combat.
+* Per-world cooldown control.
+
+### Trident
+* Cooldown with action bar timer.
+* Optional block in combat (throw & riptide).
+* Per-world bans (e.g. no tridents in Nether).
+
+---
+
+# 💀 Harming Arrow Control
+
+Controls Arrows of Harming from bows and crossbows.
+
+* **Block shooting** – Set `bows_allow_harming` or `crossbows_allow_harming` to `false` to stop loading and firing harming arrows.
+* **Block damage** – Set `no_damage: true` to cancel all harming arrow damage to players (arrows still fire but deal 0 damage).
+* **Dispensers** – Optional block for dispensers.
+* **Potions** – Optional block for harming potions (drink, throw, dispense).
+
+Players see: *"Harming is disallowed on this server!"*
+
+![Harming Arrows](assets/harmingarrows.png)
+
+---
+
+# 💥 Explosive Controls
+
+Toggle prevention for:
+
+| Item            | Message                               |
+|-----------------|----------------------------------------|
+| End Crystal     | *"End crystals are disabled here."*   |
+| Respawn Anchor  | *"Respawn anchors are disabled here."*|
+| Bed (Nether/End)| *"Beds are disabled in this dimension."* |
+| TNT Minecart    | *"TNT minecart explosions are disabled."* |
+
+All messages appear in pink on the action bar. Use `prevent_placement` / `prevent_use` / `prevent_explosion` in `config.yml`.
+
+![End Crystal](assets/endcrystal.png)  
+![Respawn Anchor](assets/respawnanchor.png)  
+![Bed Blocking](assets/bedblocking.png)  
+![TNT Minecart](assets/minecartblocking.png)
+
+---
+
+# ✨ Enchant Limiter
+
+Stops overpowered enchants (e.g. Sharpness 255).
+
+* **REVERT** – Clamp to max level (e.g. Sharpness V).
+* **DELETE** – Remove the item.
+* Per-world and bypass permission.
+* Placeholders like Protection 4, Sharpness 5.
+
+![Enchant Limiter](assets/enchantsreverted.png)
+
+---
+
+# 📦 Item Limiter
+
+Limit how many of each material a player can hold (e.g. max 64 diamonds, 3 netherite ingots, 1 totem).
+
+* Drop excess or remove.
+* Per-world control.
+* Action bar notice when denied.
+
+---
+
+# 🔒 Regearing Block (Combat)
+
+While in combat:
+* **Ender chest** – Blocked.
+* **Shulker boxes** – Blocked.
+* **Bundles** – Blocked.
+
+Chat: *"You cannot access enderchests/shulkers/bundles while in combat!"*
+
+---
+
+# 🛡️ WorldGuard Safe Zone
+
+Uses **WorldGuard** to stop players from escaping combat into no-PvP regions.
+
+* **Red barrier** – Visual barrier at region borders.
+* **Push-back** – Pushes players away from the barrier.
+* **Chorus fruit** – Blocks teleporting into safe zones.
+* Per-world settings.
+
+![Safe Zone Barrier](assets/safezonebarrier.png)
 
 ---
 
 # 👶 New Player Protection
 
-Optional protection system for new players joining the server.
+Protects new players for a configurable time (e.g. 10 minutes).
 
-* Configurable protection duration
-* PvP protection
-* Optional mob damage protection
-* Automatic removal when player attacks someone
-* Boss bar and action bar protection indicators
-* Per-world settings
+* **PvP protection** – Can’t be damaged by players.
+* **Boss bar** – Green bar with *"PvP Protection: 8m 44s"*.
+* **Removal** – Protection ends when they attack another player.
+* Per-world settings.
 
 ![New Player Protection](assets/newplayerprotection.png)
 
-*PvP protection display for new players*
+---
+
+# 🏆 Kill Rewards
+
+Run commands when a player gets a kill.
+
+* Placeholders: `%killer%`, `%victim%`, `%world%`, coordinates, health, etc.
+* Global or per-victim cooldown.
+* Example: `donutcratecore shards give %killer% 10`
 
 ---
 
-# 🛡️ WorldGuard SafeZone Protection
-
-CelestCombat-Xtra integrates with **WorldGuard** to prevent players from escaping combat through protected regions.
-
-* Visual safe-zone barriers
-* Customizable barrier materials
-* Configurable barrier height and detection radius
-* Automatic push-back system
-* Block chorus fruit teleport into safe zones
-* Per-world protection settings
-
-All barriers are rendered **client-side for minimal server impact**.
-
-![Safe Zone Barrier](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/0ab2aa0d491927b19399962e75d3216dc273fc8f/assets/safezonebarrier.png)
-
-*Safe zone barrier visualization near no-PvP regions*
-
----
-
-# 🏆 Kill Reward System
-
-Reward players for PvP victories.
-
-* Run commands on player kills
-* Global cooldown support
-* Same-player farming protection
-* Rich placeholders: `%killer%`, `%victim%`, `%killer_uuid%`, `%victim_uuid%`, `%world%`, `%x%`, `%y%`, `%z%`, health values, and more
-
-Example reward command:
-
-```
-donutcratecore shards give %killer% 10
-```
-
----
-
-# 🔌 Plugin Integrations
+# 🔌 Integrations
 
 ## PlaceholderAPI
-
-Full PlaceholderAPI support for scoreboards, tab lists, holograms, and chat.
-
-* `%celestcombat_in_combat%` – combat state
-* `%celestcombat_time_left%` – remaining seconds
-* `%celestcombat_opponent%` – opponent name
+* `%celestcombat_in_combat%`, `%celestcombat_time_left%`, `%celestcombat_opponent%`
 * `%celestcombat_pearl_cooldown%`, `%celestcombat_trident_cooldown%`, `%celestcombat_wind_cooldown%`
-* Ready flags for each cooldown
-
----
 
 ## WorldGuard
-
-* Combat safe-zone barriers
-* Prevent entry into protected regions
-* Client-side barrier rendering
-* Configurable push-back force
-
----
+* Safe-zone barriers and push-back.
 
 ## GriefPrevention
-
-* Claim entry blocking during combat
-* Visual claim barriers
-* Permission-based bypass system
-* Per-world configuration support
+* Claim entry blocking during combat.
 
 ---
 
 # ⚡ Per-World Control
 
-Configure features per world for minigames, lobbies, and PvP arenas.
-
-* **Item limiter** – enable/disable per world
-* **Enchant limiter** – enable/disable per world
-* **Ender pearl** – cooldown and block per world
-* **Trident** – cooldown and banned worlds per world
-* **Newbie protection** – per-world duration and enable
+Most features can be enabled or adjusted per world: item limiter, enchant limiter, ender pearl, trident, newbie protection.
 
 ---
 
-# ⚡ Built for Performance
+# ⚡ Performance
 
-CelestCombat-Xtra is designed for **high-population PvP environments**.
+* Single global countdown task.
+* Client-side barrier rendering.
+* Folia support.
 
-* Configurable event priorities
-* Optimized countdown timer (single global task)
-* Client-side barrier rendering
-* Per-world system controls
-* Folia support
-
-This ensures **minimal server impact even on large PvP networks**.
+Built for high-population PvP servers.

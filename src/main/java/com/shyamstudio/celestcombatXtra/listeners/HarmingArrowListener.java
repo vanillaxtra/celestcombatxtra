@@ -17,15 +17,17 @@ import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 
 import io.papermc.paper.event.entity.EntityLoadCrossbowEvent;
-import org.bukkit.potion.PotionType;
 
 import com.shyamstudio.celestcombatXtra.CelestCombatPro;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Phase 1 harming arrow control (no-damage mode).
@@ -39,40 +41,55 @@ public final class HarmingArrowListener implements Listener {
 
   private final CelestCombatPro plugin;
 
-  private final boolean noDamage;
-  private final boolean bowsAllowHarming;
-  private final boolean crossbowsAllowHarming;
-  private final boolean dispensersAllowHarming;
-  private final boolean preventPotions;
-
   public HarmingArrowListener(CelestCombatPro plugin) {
     this.plugin = plugin;
-    boolean legacyBowCrossbowAllow = plugin.getConfig().getBoolean("harming_arrows.bow_crossbow_allow", true);
-    boolean legacyDispenserAllow = plugin.getConfig().getBoolean("harming_arrows.dispenser_allow", true);
-
-    this.noDamage = plugin.getConfig().getBoolean("harming.no_damage", plugin.getConfig().getBoolean("harming_arrows.no_damage", true));
-    this.bowsAllowHarming = plugin.getConfig().getBoolean("harming.bows_allow_harming", legacyBowCrossbowAllow);
-    this.crossbowsAllowHarming = plugin.getConfig().getBoolean("harming.crossbows_allow_harming", legacyBowCrossbowAllow);
-    this.dispensersAllowHarming = plugin.getConfig().getBoolean("harming.dispensers_allow_harming", legacyDispenserAllow);
-    this.preventPotions = plugin.getConfig().getBoolean("harming.prevent_potions", true);
   }
 
-  @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+  private boolean noDamage() {
+    return plugin.getConfig().getBoolean("harming.no_damage",
+        plugin.getConfig().getBoolean("harming_arrows.no_damage", true));
+  }
+
+  private boolean bowsAllowHarming() {
+    return plugin.getConfig().getBoolean("harming.bows_allow_harming",
+        plugin.getConfig().getBoolean("harming_arrows.bow_crossbow_allow", true));
+  }
+
+  private boolean crossbowsAllowHarming() {
+    return plugin.getConfig().getBoolean("harming.crossbows_allow_harming",
+        plugin.getConfig().getBoolean("harming_arrows.bow_crossbow_allow", true));
+  }
+
+  private boolean dispensersAllowHarming() {
+    return plugin.getConfig().getBoolean("harming.dispensers_allow_harming",
+        plugin.getConfig().getBoolean("harming_arrows.dispenser_allow", true));
+  }
+
+  private boolean preventPotions() {
+    return plugin.getConfig().getBoolean("harming.prevent_potions", true);
+  }
+
+  @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
   public void onEntityShootBow(EntityShootBowEvent event) {
     Entity shooterEntity = event.getEntity();
     if (!(shooterEntity instanceof Player player)) return;
-    if (!(event.getProjectile() instanceof AbstractArrow arrow)) return;
 
-    if (!isHarmingArrowProjectile(arrow)) return;
+    // Check consumable first (arrow item being shot) - most reliable
+    ItemStack consumable = event.getConsumable();
+    boolean isHarming = consumable != null && isHarmingArrowItem(consumable);
+    if (!isHarming && event.getProjectile() instanceof AbstractArrow arrow) {
+      isHarming = isHarmingArrowProjectile(arrow);
+    }
+    if (!isHarming) return;
 
     Material weaponType = event.getBow() != null ? event.getBow().getType() : Material.AIR;
     boolean allowed;
     if (weaponType == Material.CROSSBOW) {
-      allowed = crossbowsAllowHarming;
+      allowed = crossbowsAllowHarming();
     } else if (weaponType == Material.BOW) {
-      allowed = bowsAllowHarming;
+      allowed = bowsAllowHarming();
     } else {
-      allowed = bowsAllowHarming; // Best-effort default
+      allowed = bowsAllowHarming();
     }
 
     if (allowed) return;
@@ -86,31 +103,32 @@ public final class HarmingArrowListener implements Listener {
     ItemStack item = event.getItem();
     if (item == null || item.getType() == Material.AIR) return;
 
-    if (preventPotions && isHarmingPotionItem(item)) {
+    if (preventPotions() && isHarmingPotionItem(item)) {
       event.setCancelled(true);
       return;
     }
 
-    if (dispensersAllowHarming) return;
+    if (dispensersAllowHarming()) return;
 
     if (!isHarmingArrowItem(item)) return;
     event.setCancelled(true);
   }
 
-  @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+  @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
   public void onDamage(EntityDamageByEntityEvent event) {
-    if (!noDamage) return;
+    if (!noDamage()) return;
     if (!(event.getDamager() instanceof AbstractArrow arrow)) return;
-    if (!(event.getEntity() instanceof Player victim)) return;
+    if (!(event.getEntity() instanceof Player)) return;
 
     if (!isHarmingArrowProjectile(arrow)) return;
 
     event.setCancelled(true);
+    event.setDamage(0);
   }
 
-  @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+  @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
   public void onCrossbowLoad(EntityLoadCrossbowEvent event) {
-    if (crossbowsAllowHarming) return;
+    if (crossbowsAllowHarming()) return;
     if (!(event.getEntity() instanceof Player player)) return;
 
     // Crossbow consumes arrows: opposite hand first, then hotbar 0-8. Cancel only if the first arrow would be harming.
@@ -143,7 +161,7 @@ public final class HarmingArrowListener implements Listener {
 
   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
   public void onPotionConsume(PlayerItemConsumeEvent event) {
-    if (!preventPotions) return;
+    if (!preventPotions()) return;
     ItemStack item = event.getItem();
     if (!isHarmingPotionItem(item)) return;
 
@@ -153,7 +171,7 @@ public final class HarmingArrowListener implements Listener {
 
   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
   public void onPotionLaunch(ProjectileLaunchEvent event) {
-    if (!preventPotions) return;
+    if (!preventPotions()) return;
     if (!(event.getEntity() instanceof ThrownPotion potion)) return;
 
     if (!isHarmingThrownPotion(potion)) return;
@@ -196,7 +214,12 @@ public final class HarmingArrowListener implements Listener {
 
   private boolean isHarmingPotionType(PotionType type) {
     if (type == null) return false;
-    return type == PotionType.HARMING || type == PotionType.STRONG_HARMING;
+    if (type == PotionType.HARMING || type == PotionType.STRONG_HARMING) return true;
+    try {
+      return type == PotionType.valueOf("INSTANT_DAMAGE") || type.name().toUpperCase().contains("HARMING");
+    } catch (IllegalArgumentException ignored) {
+      return false;
+    }
   }
 
   private boolean isHarmingThrownPotion(ThrownPotion potion) {
@@ -237,9 +260,12 @@ public final class HarmingArrowListener implements Listener {
   private boolean isHarmingArrowProjectile(AbstractArrow arrow) {
     if (arrow == null) return false;
 
-    // Primary: check the arrow's item (most reliable across versions)
-    ItemStack arrowItem = arrow.getItem();
-    if (arrowItem != null && isHarmingArrowItem(arrowItem)) return true;
+    // Primary: check the arrow's item (most reliable when available)
+    try {
+      ItemStack arrowItem = arrow.getItem();
+      if (arrowItem != null && !arrowItem.getType().isAir() && isHarmingArrowItem(arrowItem)) return true;
+    } catch (Exception ignored) {
+    }
 
     if (!(arrow instanceof Arrow tippedArrow)) return false;
 
@@ -250,11 +276,23 @@ public final class HarmingArrowListener implements Listener {
     } catch (NoSuchMethodError | Exception ignored) {
     }
 
-    // Check custom effects (HARM/INSTANT_DAMAGE)
+    // Check custom effects (INSTANT_DAMAGE) via getCustomEffects
+    try {
+      List<PotionEffect> effects = tippedArrow.getCustomEffects();
+      if (effects != null) {
+        PotionEffectType harm = PotionEffectType.INSTANT_DAMAGE;
+        for (PotionEffect eff : effects) {
+          if (eff != null && eff.getType().equals(harm)) return true;
+        }
+      }
+    } catch (NoSuchMethodError | Exception ignored) {
+    }
+
+    // Alternative: hasCustomEffect when available
     try {
       PotionEffectType harm = PotionEffectType.INSTANT_DAMAGE;
       if (harm != null && tippedArrow.hasCustomEffect(harm)) return true;
-    } catch (Exception ignored) {
+    } catch (NoSuchMethodError | Exception ignored) {
     }
 
     // Fallback: reflection for older servers
@@ -269,7 +307,7 @@ public final class HarmingArrowListener implements Listener {
           return s.contains("INSTANT_DAMAGE") || s.contains("HARMING");
         }
       }
-    } catch (Exception ignored) {
+    } catch (Throwable ignored) {
     }
 
     return false;
