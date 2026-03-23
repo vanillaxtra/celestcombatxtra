@@ -23,7 +23,7 @@ debug: false
 #---------------------------------------------------
 combat:
   # Combat tag duration
-  duration: 20s
+  duration: 30s
 
   # Command blocking mode: "blacklist" or "whitelist"
   # whitelist - blocks all commands EXCEPT those listed in 'allowed_commands'
@@ -47,6 +47,7 @@ combat:
     - "ec"
     - "vanish"
     - "v"
+    - "ecall"
 
   # Commands allowed during combat (used in whitelist mode)
   allowed_commands:
@@ -72,7 +73,7 @@ combat:
   nametag:
     enabled: false
     prefix: "&c⚔ "
-    suffix: " &7vs &f%opponent% &8(%time%s)"
+    suffix: " &7(%time%s)"
 
   # Optional boss bar showing combat countdown (off by default)
   bossbar:
@@ -87,7 +88,7 @@ combat:
 # Top-level: disabled items (hard block in combat) + cooldowned items (use cooldowns).
 # Legacy: same structure may exist under combat.item_restrictions (still supported).
 item_restrictions:
-  enabled: true
+  enabled: false
 
   # Hard-disabled items while in combat (ELYTRA enables elytra combat rules — see elytra:)
   disabled_items:
@@ -115,7 +116,7 @@ item_restrictions:
 #              REGEARING (while combat-tagged)
 #---------------------------------------------------
 regearing:
-  enabled: true
+  enabled: false
   block_enderchest: true
   block_shulker_boxes: true
   block_bundle_access: true
@@ -127,7 +128,6 @@ regearing:
 # Elytra abuse prevention works independently of disabled_items; no need to list ELYTRA there.
 elytra:
   enabled: true
-  require_elytra_in_disabled_list: false
 
   abuse_prevention:
     # If false: glide/firework stay blocked in combat, but NO strike counter and NO unequip/break/drop penalty.
@@ -137,7 +137,7 @@ elytra:
     # TEMP_BREAK — max durability on chest piece, restore after temp_break_duration_seconds
     # DROP — unequip and drop the item at the player's feet (no durability change)
     full_inventory_action: TEMP_BREAK
-    temp_break_duration_seconds: 30
+    temp_break_duration_seconds: 10
 
 #---------------------------------------------------
 #     CRYSTAL / ANCHOR / BED / TNT MINECART (global)
@@ -215,11 +215,8 @@ item_limiter:
   # Set false to disable excess_removed messages entirely
   send_excess_messages: true
   limits:
-    DIAMOND: 64
-    DIAMOND_BLOCK: 16
-    NETHERITE_INGOT: 3
-    TOTEM_OF_UNDYING: 1
-    GOLDEN_APPLE: 5
+    TOTEM_OF_UNDYING: 3
+    GOLDEN_APPLE: 64
 
 #---------------------------------------------------
 #              SPEAR (1.21+)
@@ -327,7 +324,7 @@ mace:
 #                HARMING ARROWS
 # ---------------------------------------------------
 harming:
-  no_damage: true
+  no_damage: false
   # If false, cancel shooting/loading harming arrows from bows.
   bows_allow_harming: true
   # If false, cancel shooting/loading harming arrows from crossbows.
@@ -335,7 +332,7 @@ harming:
   # If false, cancel dispenser dispensing harming arrows (and harming potions).
   dispensers_allow_harming: true
   # If true, block using/dropping harming (instant damage) potions.
-  prevent_potions: true
+  prevent_potions: false
 
 #---------------------------------------------------
 #                  DEATH EFFECTS

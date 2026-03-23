@@ -1,5 +1,10 @@
 package com.shyamstudio.celestcombatXtra.updates;
 
+/**
+ * Update checker that fetches the latest version from Modrinth.
+ * <p>
+ * Uses project slug from {@code modrinth.com/plugin/celestcombat-xtra}.
+ */
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -30,7 +35,8 @@ import java.util.stream.Collectors;
 
 public class UpdateChecker implements Listener {
     private final JavaPlugin plugin;
-    private final String projectId = "Kp9Kt4QT";
+    /** Modrinth project slug: modrinth.com/plugin/celestcombat-xtra */
+    private final String projectId = "celestcombat-xtra";
     private boolean updateAvailable = false;
     private final String currentVersion;
     private String latestVersion = "";
@@ -115,6 +121,7 @@ public class UpdateChecker implements Listener {
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setRequestProperty("User-Agent", "CelestCombat-UpdateChecker/1.0");
+                connection.setRequestProperty("Accept", "application/json");
 
                 if (connection.getResponseCode() != 200) {
                     plugin.getLogger().warning("Failed to check for updates. HTTP Error: " + connection.getResponseCode());

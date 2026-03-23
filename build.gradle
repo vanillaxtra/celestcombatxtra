@@ -1,10 +1,11 @@
 plugins {
     id 'java'
     id("xyz.jpenilla.run-paper") version "2.3.1"
+    id("com.gradleup.shadow") version "9.3.1"
 }
 
 group = 'com.shyamstudio'
-version = '1.0.0'
+version = '1.0.1'
 
 repositories {
     mavenCentral()
@@ -53,8 +54,29 @@ dependencies {
         exclude group: 'it.unimi.dsi', module: 'fastutil'
     }
     
-    implementation 'com.github.GriefPrevention:GriefPrevention:17.0.0'
+    compileOnly 'com.github.GriefPrevention:GriefPrevention:17.0.0'
     compileOnly 'me.clip:placeholderapi:2.11.6'
+
+    // bStats metrics - relocated into plugin jar to avoid conflicts
+    implementation 'org.bstats:bstats-bukkit:3.2.1'
+}
+
+jar {
+    enabled = false
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    relocate('org.bstats', "${project.group}.bstats") {
+        skipStringConstants = true
+    }
+    dependencies {
+        exclude { it.moduleGroup != 'org.bstats' }
+    }
+}
+
+tasks.named('build') {
+    dependsOn tasks.shadowJar
 }
 
 tasks {

@@ -1,8 +1,37 @@
 # CelestCombat-Xtra
 
-**CelestCombat-Xtra** is a comprehensive combat management plugin for **SwordPvP, CrystalPvP, and competitive Minecraft servers**.
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ptthanh02/CelestCombat)
+[![Platform](https://img.shields.io/badge/Paper-1.21--1.21.4-purple.svg)](https://papermc.io/)
+[![Folia](https://img.shields.io/badge/Folia-Supported-brightgreen.svg)](https://github.com/PaperMC/Folia)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white)](https://discord.gg/WpYZkrdNVe)
 
-It prevents combat logging, blocks escape mechanics, integrates with major protection plugins, and provides advanced item restriction systems while remaining highly configurable for PvP balance.
+A comprehensive combat management plugin for **SwordPvP, CrystalPvP, and competitive Minecraft servers**. Prevents combat logging, blocks escape mechanics, integrates with major protection plugins, and provides advanced item restriction systems—all highly configurable.
+
+---
+
+## Requirements
+
+- **Minecraft:** 1.21 – 1.21.4
+- **Server:** Paper, Purpur, or Folia
+- **Java:** 21+
+
+### Optional Dependencies
+
+| Plugin | Purpose |
+|--------|---------|
+| **PlaceholderAPI** | Placeholders for scoreboards, tab lists, holograms |
+| **WorldGuard** | Safezone barriers and region protection |
+| **GriefPrevention** | Claim-edge barriers and claim protection |
+
+---
+
+## Installation
+
+1. Download the latest release
+2. Place the `.jar` in your server’s `plugins` folder
+3. Restart the server
+4. Edit `plugins/CelestCombat/config.yml`
+5. Reload with `/celestcombat reload` or `/ccx reload`
 
 ---
 
@@ -15,8 +44,8 @@ It prevents combat logging, blocks escape mechanics, integrates with major prote
 * **Flight control** – Disable creative flight while tagged.
 * **Nametag & boss bar** – Optional opponent name and countdown.
 
-![Configurable Nametag](assets/configurablenametag.png)
-![Combat Timer](assets/combattimer.png)
+![Configurable Nametag](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/configurablenametag.png)
+![Combat Timer](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/combattimer.png)
 
 ---
 
@@ -32,7 +61,7 @@ All timers appear in one line above the hotbar, separated by vertical bars.
 
 Items on cooldown also show a **white wipe overlay** on the hotbar so you can see at a glance which items are ready.
 
-![Cooldowns](assets/cooldowns.png)
+![Cooldowns](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/cooldowns.png)
 
 ---
 
@@ -46,7 +75,7 @@ Add items to `disabled_items` in `config.yml`. While in combat, players **cannot
 
 Players see a pink action bar message: *"You cannot use [item] while in combat!"*
 
-![Configurable Blocking](assets/configurableblocking.png)
+![Configurable Blocking](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/configurableblocking.png)
 
 ## Cooldowned Items
 
@@ -56,8 +85,8 @@ Add items with cooldowns in `cooldowned_items`. After use, the item is locked fo
 * Physical cooldown overlay on the item in the hotbar.
 * Applies in combat and/or out of combat (configurable).
 
-![Configurable Cooldowns](assets/configurablecooldowns.png)
-![Item Cooldown](assets/itemcooldown.png)
+![Configurable Cooldowns](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/configurablecooldowns.png)
+![Item Cooldown](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/itemcooldown.png)
 
 ---
 
@@ -71,7 +100,7 @@ Add items with cooldowns in `cooldowned_items`. After use, the item is locked fo
 
 A crossed-out elytra icon shows when elytra use is blocked.
 
-![Elytra](assets/elytra.png)
+![Elytra](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/elytra.png)
 
 ---
 
@@ -100,7 +129,7 @@ Controls Arrows of Harming from bows and crossbows.
 
 Players see: *"Harming is disallowed on this server!"*
 
-![Harming Arrows](assets/harmingarrows.png)
+![Harming Arrows](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/harmingarrows.png)
 
 ---
 
@@ -117,10 +146,10 @@ Toggle prevention for:
 
 All messages appear in pink on the action bar. Use `prevent_placement` / `prevent_use` / `prevent_explosion` in `config.yml`.
 
-![End Crystal](assets/endcrystal.png)  
-![Respawn Anchor](assets/respawnanchor.png)  
-![Bed Blocking](assets/bedblocking.png)  
-![TNT Minecart](assets/minecartblocking.png)
+![End Crystal](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/endcrystal.png)  
+![Respawn Anchor](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/respawnanchor.png)  
+![Bed Blocking](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/bedblocking.png)  
+![TNT Minecart](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/minecartblocking.png)
 
 ---
 
@@ -133,7 +162,7 @@ Stops overpowered enchants (e.g. Sharpness 255).
 * Per-world and bypass permission.
 * You can see that this max stick gets sharpness reverted.
 
-![Enchant Limiter](assets/enchantsreverted.png)
+![Enchant Limiter](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/enchantsreverted.png)
 
 ---
 
@@ -167,7 +196,7 @@ Uses **WorldGuard** to stop players from escaping combat into no-PvP regions.
 * **Chorus fruit** – Blocks teleporting into safe zones.
 * Per-world settings.
 
-![Safe Zone Barrier](assets/safezonebarrier.png)
+![Safe Zone Barrier](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/safezonebarrier.png)
 
 ---
 
@@ -180,17 +209,28 @@ Protects new players for a configurable time (e.g. 10 minutes).
 * **Removal** – Protection ends when they attack another player.
 * Per-world settings.
 
-![New Player Protection](assets/newplayerprotection.png)
+![New Player Protection](https://raw.githubusercontent.com/vanillaxtra/celestcombatxtra/f5cf7afe9d9ee40cfaafe0f16a88a5ace7105c9b/assets/newplayerprotection.png)
 
 ---
 
 # 🏆 Kill Rewards
 
-Run commands when a player gets a kill.
+Run commands when a player gets a kill. Use in `kill_rewards.commands`:
 
-* Placeholders: `%killer%`, `%victim%`, `%world%`, coordinates, health, etc.
-* Global or per-victim cooldown.
-* Example: `donutcratecore shards give %killer% 10`
+| Placeholder | Description |
+|-------------|-------------|
+| `%killer%` | Killer’s name |
+| `%victim%` | Victim’s name |
+| `%killer_uuid%` | Killer’s UUID |
+| `%victim_uuid%` | Victim’s UUID |
+| `%killer_health%` | Killer’s health when reward runs |
+| `%victim_health%` | Victim’s health (usually 0) |
+| `%killer_max_health%` | Killer’s max health |
+| `%victim_max_health%` | Victim’s max health |
+| `%world%` | Victim’s world name |
+| `%x%`, `%y%`, `%z%` | Victim’s block coordinates |
+
+* Global or per-victim cooldown. Example: `donutcratecore shards give %killer% 10`
 
 ---
 
@@ -211,24 +251,76 @@ Run commands when a player gets a kill.
 | `%celestcombat_trident_ready%` | `true` or `false` |
 | `%celestcombat_wind_ready%` | `true` or `false` |
 
-## WorldGuard
-* Safe-zone barriers and push-back.
 
-## GriefPrevention
-* Claim entry blocking during combat.
 
 ---
 
-# ⚡ Per-World Control
+## Commands
 
-Most features can be enabled or adjusted per world: item limiter, enchant limiter, ender pearl, trident, newbie protection.
+| Command | Permission | Description |
+|---------|------------|-------------|
+| `/celestcombat` | `celestcombatxtra.command.use` | Main command (shows help) |
+| `/celestcombat help` | `celestcombatxtra.command.use` | Display help |
+| `/celestcombat reload` | `celestcombatxtra.command.use` | Reload config and messages |
+| `/celestcombat tag <player1> [player2]` | `celestcombatxtra.command.use` | Manually tag players in combat |
+| `/celestcombat removeTag <player\|world\|all>` | `celestcombatxtra.command.use` | Remove combat tags |
+| `/celestcombat killReward clear [player]` | `celestcombatxtra.command.use` | Clear kill reward cooldowns |
+| `/celestcombat newbieProtection add/remove/check <player>` | `celestcombatxtra.command.use` | Manage newbie protection |
+| `/celestcombat config` | `celestcombatxtra.command.config` | Browse and edit config in-game |
+
+**Aliases:** `/ccx`, `/celestcombat`, `/combat`
 
 ---
 
-# ⚡ Performance
+## Permissions
 
-* Single global countdown task.
-* Client-side barrier rendering.
-* Folia support.
+| Permission | Default | Description |
+|------------|---------|-------------|
+| `celestcombatxtra.command.use` | OP | Use all plugin commands |
+| `celestcombatxtra.command.config` | OP | Browse and edit config in-game |
+| `celestcombatxtra.update.notify` | OP | Receive update notifications |
+| `celestcombatxtra.bypass.tag` | false | Bypass combat tagging (no combat-log punishment) |
+| `celestcombatxtra.bypass.enchant_limit` | OP | Bypass enchant level limits |
+| `celestcombatxtra.bypass.item_limit` | OP | Bypass item limiter (per-material caps) |
+| `celestcombatxtra.bypass.spear_control` | OP | Bypass spear lunge cooldown and damage rules |
 
-Built for high-population PvP servers.
+---
+
+## Configuration
+
+Main config: `plugins/CelestCombat/config.yml`
+
+Notable sections:
+
+- `combat` – Duration, command blocking, nametag, boss bar
+- `item_restrictions` – Disabled items, cooldowned items
+- `elytra` – Elytra abuse prevention
+- `item_limiter` – Per-material limits, per-world
+- `enchant_limiter` – Enchant caps, per-world
+- `enderpearl`, `trident`, `windcharge`, `mace`, `spear_control`
+- `kill_rewards` – Commands and cooldowns
+- `newbie_protection` – Duration, display, worlds
+- `safezone_protection` – WorldGuard barriers
+- `claim_protection` – GriefPrevention integration
+
+Use `/celestcombat config` to browse and edit in-game (with permission).
+
+---
+
+## Discord
+
+[![Discord](https://img.shields.io/badge/Discord-Join%20Server-qdmSv7usbJ?logo=discord&logoColor=white)](https://discord.gg/qdmSv7usbJ)
+
+Join for support, updates, and feedback.
+
+---
+
+## Statistics
+
+This plugin uses [bStats](https://bstats.org/) to collect anonymous usage statistics (server count, Minecraft version, etc.). This helps prioritize development. You can opt out in the bStats config.
+
+---
+
+## License
+
+This project is licensed under the CC BY-NC-SA 4.0 License. See [LICENSE](LICENSE) for details.

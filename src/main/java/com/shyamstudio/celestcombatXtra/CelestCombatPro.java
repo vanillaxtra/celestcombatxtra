@@ -2,7 +2,7 @@ package com.shyamstudio.celestcombatXtra;
 
 import com.shyamstudio.celestcombatXtra.api.CelestCombatAPI;
 import com.shyamstudio.celestcombatXtra.api.CombatAPIImpl;
-import com.shyamstudio.celestcombatXtra.bstats.Metrics;
+import org.bstats.bukkit.Metrics;
 import com.shyamstudio.celestcombatXtra.combat.CombatManager;
 import com.shyamstudio.celestcombatXtra.combat.DeathAnimationManager;
 import com.shyamstudio.celestcombatXtra.commands.CommandManager;
@@ -205,7 +205,15 @@ public class CelestCombatPro extends JavaPlugin {
 
   private void setupBtatsMetrics() {
     Scheduler.runTask(() -> {
-      Metrics metrics = new Metrics(this, 27299);
+      try {
+        int pluginId = 30372; // https://bstats.org/plugin/bukkit/celestcombatxtra/30372
+        new Metrics(this, pluginId);
+        if (debugMode) {
+          getLogger().info("bStats metrics enabled (ID: 30372). Data appears on bstats.org within ~30 min.");
+        }
+      } catch (Throwable t) {
+        getLogger().warning("Failed to initialize bStats: " + t.getMessage());
+      }
     });
   }
 
