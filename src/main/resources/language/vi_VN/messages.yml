@@ -533,3 +533,11 @@ pvp_deactivation_complete:
 
 pvp_teleport_rearm_notice:
   message: "<gold>Teleporting re-arms your PVP - activating again in <white><seconds>s<gold>."
+
+pvp_teleport_grace_attacker_blocked:
+  message: "<red>You recently teleported - PVP is briefly disabled to prevent tp-kills."
+  sound: entity.villager.no
+
+pvp_teleport_grace_victim_blocked:
+  message: "<red><player> recently teleported and is briefly protected from PVP."
+  sound: entity.villager.no

@@ -586,7 +586,9 @@ pvp:
     # then re-activates through the same activation_warmup after landing).
     # Only command/plugin-driven teleports (warps, /tp, homes, etc.) trigger this -
     # vanilla teleports (ender pearls, chorus fruit, beds, portals, etc.) never do.
-    # This is not configurable.
+    # This also applies when pvp.enabled above is false: qualifying teleports still
+    # grant activation_warmup seconds of PVP-off grace, even though the /pvp toggle
+    # itself is unavailable.
     rearm_enabled: true
 
 #---------------------------------------------------
