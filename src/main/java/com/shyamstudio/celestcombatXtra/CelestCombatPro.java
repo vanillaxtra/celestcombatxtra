@@ -23,9 +23,11 @@ import com.shyamstudio.celestcombatXtra.listeners.EnchantLimiterListener;
 import com.shyamstudio.celestcombatXtra.listeners.ExplosiveControlsListener;
 import com.shyamstudio.celestcombatXtra.listeners.ItemRestrictionListener;
 import com.shyamstudio.celestcombatXtra.listeners.PvpToggleListener;
+import com.shyamstudio.celestcombatXtra.listeners.TeleportGraceListener;
 import com.shyamstudio.celestcombatXtra.listeners.TridentListener;
 import com.shyamstudio.celestcombatXtra.protection.NewbieProtectionManager;
 import com.shyamstudio.celestcombatXtra.pvp.PvpToggleManager;
+import com.shyamstudio.celestcombatXtra.pvp.TeleportGraceManager;
 import com.shyamstudio.celestcombatXtra.rewards.KillRewardManager;
 import com.shyamstudio.celestcombatXtra.storage.PvpStorage;
 import com.shyamstudio.celestcombatXtra.storage.StorageFactory;
@@ -71,6 +73,7 @@ public class CelestCombatPro extends JavaPlugin {
   private PvpToggleManager pvpToggleManager;
   private PvpHighlightManager pvpHighlightManager;
   private PvpToggleListener pvpToggleListener;
+  private TeleportGraceManager teleportGraceManager;
 
   public static boolean hasWorldGuard = false;
   public static boolean hasGriefPrevention = false;
@@ -162,6 +165,20 @@ public class CelestCombatPro extends JavaPlugin {
     } else {
       getLogger().info("PVP toggling is disabled in config (pvp.enabled: false) - /pvp, the status "
           + "highlight, and the toggle-state database are all inactive. PVP damage is unrestricted.");
+
+      teleportGraceManager = new TeleportGraceManager(this);
+      getServer().getPluginManager().registerEvents(new TeleportGraceListener(this), this);
+      if (Scheduler.isRunningOnCanvas()) {
+        try {
+          getServer().getPluginManager().registerEvents(
+              new com.shyamstudio.celestcombatXtra.listeners.CanvasTeleportGraceListener(this), this);
+          getLogger().info("Canvas detected - registered EntityTeleportAsyncEvent listener for teleport "
+              + "PVP grace.");
+        } catch (Throwable t) {
+          getLogger().warning("Canvas detected but failed to register the async teleport listener - "
+              + "falling back to PlayerTeleportEvent only for teleport PVP grace. Cause: " + t);
+        }
+      }
     }
 
     combatAPI = new CombatAPIImpl(this, combatManager);
