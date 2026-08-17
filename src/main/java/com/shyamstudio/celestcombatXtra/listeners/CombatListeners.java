@@ -17,6 +17,7 @@ import com.shyamstudio.celestcombatXtra.combat.DeathAnimationManager;
 import com.shyamstudio.celestcombatXtra.language.MessageService;
 import com.shyamstudio.celestcombatXtra.protection.NewbieProtectionManager;
 import com.shyamstudio.celestcombatXtra.pvp.PvpToggleManager;
+import com.shyamstudio.celestcombatXtra.pvp.TeleportGraceManager;
 import com.shyamstudio.celestcombatXtra.rewards.KillRewardManager;
 
 import org.bukkit.World;
@@ -341,7 +342,7 @@ public class CombatListeners implements Listener {
     private boolean blockIfPvpDisabled(EntityDamageEvent event, Player attacker, Player victim) {
         PvpToggleManager pvpToggleManager = plugin.getPvpToggleManager();
         if (pvpToggleManager == null) {
-            return false;
+            return blockIfTeleportGraceActive(event, attacker, victim);
         }
 
         boolean attackerOff = !pvpToggleManager.isEffectivelyPvpEnabled(attacker);
@@ -361,6 +362,39 @@ public class CombatListeners implements Listener {
         } else {
             placeholders.put("player", victim.getName());
             messageService.sendMessage(attacker, "pvp_victim_pvp_disabled", placeholders);
+        }
+        return true;
+    }
+
+    /**
+     * Fallback used when {@code pvp.enabled} is false (no PvpToggleManager to
+     * consult) - still blocks damage for players in an active teleport-rearm
+     * grace window granted by {@link TeleportGraceManager}, see {@link
+     * com.shyamstudio.celestcombatXtra.CelestCombatPro#onEnable()}.
+     */
+    private boolean blockIfTeleportGraceActive(EntityDamageEvent event, Player attacker, Player victim) {
+        TeleportGraceManager grace = plugin.getTeleportGraceManager();
+        if (grace == null) {
+            return false;
+        }
+
+        boolean attackerGrace = grace.hasGrace(attacker);
+        boolean victimGrace = grace.hasGrace(victim);
+        if (!attackerGrace && !victimGrace) {
+            return false;
+        }
+
+        event.setCancelled(true);
+        if (!shouldSendPvpDenialMessage(attacker, victim)) {
+            return true;
+        }
+
+        Map<String, String> placeholders = new HashMap<>();
+        if (attackerGrace) {
+            messageService.sendMessage(attacker, "pvp_teleport_grace_attacker_blocked", placeholders);
+        } else {
+            placeholders.put("player", victim.getName());
+            messageService.sendMessage(attacker, "pvp_teleport_grace_victim_blocked", placeholders);
         }
         return true;
     }
