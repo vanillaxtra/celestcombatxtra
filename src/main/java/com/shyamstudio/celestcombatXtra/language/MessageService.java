@@ -2,12 +2,14 @@ package com.shyamstudio.celestcombatXtra.language;
 
 import com.shyamstudio.celestcombatXtra.CelestCombatPro;
 import lombok.RequiredArgsConstructor;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.title.Title;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,8 +19,11 @@ public class MessageService {
     private final JavaPlugin plugin;
     private final LanguageManager languageManager;
 
-    // Static empty map to avoid creating new HashMap instances
     private static final Map<String, String> EMPTY_PLACEHOLDERS = Collections.emptyMap();
+
+    // ticks * 50ms, matching the previous sendTitle(String,String,10,70,20) call
+    private static final Title.Times TITLE_TIMES = Title.Times.times(
+            Duration.ofMillis(500), Duration.ofMillis(3500), Duration.ofMillis(1000));
 
     // Cache for key existence checks to reduce repeated lookups
     private final Map<String, Boolean> keyExistsCache = new ConcurrentHashMap<>(128);
@@ -29,7 +34,6 @@ public class MessageService {
      * @param key The message key
      */
     public void sendMessage(CommandSender sender, String key) {
-        // Use shared empty map instead of creating a new HashMap
         sendMessage(sender, key, EMPTY_PLACEHOLDERS);
     }
 
@@ -39,7 +43,6 @@ public class MessageService {
      * @param key The message key
      */
     public void sendMessage(Player player, String key) {
-        // Use shared empty map instead of creating a new HashMap
         sendMessage(player, key, EMPTY_PLACEHOLDERS);
     }
 
@@ -64,13 +67,13 @@ public class MessageService {
         // Validate the message key exists (using cache to avoid lookups)
         if (!checkKeyExists(key)) {
             plugin.getLogger().warning("Message key not found: " + key);
-            sender.sendMessage("§cMissing message key: " + key);
+            sender.sendMessage(Component.text("Missing message key: " + key, NamedTextColor.RED));
             return;
         }
 
         // Get and send the chat message if it exists
-        String message = languageManager.getMessage(key, placeholders);
-        if (message != null && !message.startsWith("Missing message:")) {
+        Component message = languageManager.getMessage(key, placeholders);
+        if (message != null) {
             sender.sendMessage(message);
         }
 
@@ -113,29 +116,15 @@ public class MessageService {
         // Validate the message key exists
         if (!languageManager.keyExists(key)) {
             plugin.getLogger().warning("Message key not found: " + key);
-            plugin.getLogger().warning("§cMissing message key: " + key);
+            plugin.getLogger().warning("Missing message key: " + key);
             return;
         }
 
         // Get the raw message without prefix for console formatting
-        String message = languageManager.getRawMessage(key, placeholders);
-        if (message != null && !message.startsWith("Missing message:")) {
-            // Strip color codes for console
-            String consoleMessage = stripColorCodes(message);
-            plugin.getLogger().info(consoleMessage);
+        Component message = languageManager.getRawMessage(key, placeholders);
+        if (message != null) {
+            plugin.getLogger().info(ColorUtil.plainOf(message));
         }
-    }
-
-    /**
-     * Strips color codes from a message for console output
-     * @param message The message with color codes
-     * @return The message without color codes
-     */
-    private String stripColorCodes(String message) {
-        // Remove standard color codes (§) and RGB hex codes
-        return message.replaceAll("§[0-9a-fA-Fk-oK-OrR]", "")
-                .replaceAll("&#[0-9a-fA-F]{6}", "")
-                .replaceAll("&[0-9a-fA-Fk-oK-OrR]", "");
     }
 
     /**
@@ -146,25 +135,22 @@ public class MessageService {
      */
     private void sendPlayerSpecificContent(Player player, String key, Map<String, String> placeholders) {
         // Title and subtitle
-        String title = languageManager.getTitle(key, placeholders);
-        String subtitle = languageManager.getSubtitle(key, placeholders);
+        Component title = languageManager.getTitle(key, placeholders);
+        Component subtitle = languageManager.getSubtitle(key, placeholders);
         if (title != null || subtitle != null) {
-            player.sendTitle(
-                    title != null ? title : "",
-                    subtitle != null ? subtitle : "",
-                    10, 70, 20
-            );
+            player.showTitle(Title.title(
+                    title != null ? title : Component.empty(),
+                    subtitle != null ? subtitle : Component.empty(),
+                    TITLE_TIMES
+            ));
         }
 
         // Action bar
         boolean skipActionBar = plugin instanceof CelestCombatPro ccp && ccp.isActionBarDisabled();
         if (!skipActionBar) {
-            String actionBar = languageManager.getActionBar(key, placeholders);
+            Component actionBar = languageManager.getActionBar(key, placeholders);
             if (actionBar != null) {
-                player.spigot().sendMessage(
-                        ChatMessageType.ACTION_BAR,
-                        TextComponent.fromLegacyText(ColorUtil.translateHexColorCodes(actionBar))
-                );
+                player.sendActionBar(actionBar);
             }
         }
 

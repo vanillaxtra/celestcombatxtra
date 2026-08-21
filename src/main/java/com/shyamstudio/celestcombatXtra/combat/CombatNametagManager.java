@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import net.kyori.adventure.text.Component;
 
 import com.shyamstudio.celestcombatXtra.CelestCombatPro;
 
@@ -54,8 +55,8 @@ public final class CombatNametagManager {
     placeholders.put("time", String.valueOf(seconds));
     placeholders.put("time_seconds", String.valueOf(seconds));
 
-    String prefix = trimTeamField(plugin.getLanguageManager().getNametagPrefix(placeholders));
-    String suffix = trimTeamField(plugin.getLanguageManager().getNametagSuffix(placeholders));
+    Component prefix = plugin.getLanguageManager().getNametagPrefix(placeholders);
+    Component suffix = plugin.getLanguageManager().getNametagSuffix(placeholders);
 
     Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
     String teamName = teamId(player);
@@ -77,8 +78,8 @@ public final class CombatNametagManager {
     if (!team.hasEntry(entry)) {
       team.addEntry(entry);
     }
-    team.setPrefix(prefix);
-    team.setSuffix(suffix);
+    team.prefix(prefix);
+    team.suffix(suffix);
   }
 
   public void clear(Player player) {
@@ -110,11 +111,5 @@ public final class CombatNametagManager {
 
   private static String teamId(Player player) {
     return "ccxnt_" + player.getUniqueId().toString().replace("-", "");
-  }
-
-  private static String trimTeamField(String s) {
-    if (s == null) return "";
-    // legacy clients have a 64-char team prefix/suffix limit
-    return s.length() > 64 ? s.substring(0, 64) : s;
   }
 }

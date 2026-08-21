@@ -1,6 +1,6 @@
 package com.shyamstudio.celestcombatXtra.cooldown;
 
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -143,10 +143,9 @@ public final class ItemCooldownManager {
   private void sendActionBarOnly(Player player, String messageKey, Map<String, String> placeholders) {
     if (player == null || !player.isOnline()) return;
     if (plugin.isActionBarDisabled()) return;
-    String line = plugin.getLanguageManager().getActionBar(messageKey, placeholders);
+    Component line = plugin.getLanguageManager().getActionBar(messageKey, placeholders);
     if (line == null) return;
-    plugin.sendActionBar(player,
-        TextComponent.fromLegacyText(ColorUtil.translateHexColorCodes(line)));
+    plugin.sendActionBar(player, line);
   }
 
   private boolean shouldNotOverwriteCoreActionBar(Player player) {
@@ -345,18 +344,20 @@ public final class ItemCooldownManager {
     return new GeneralCooldownInfo(itemName, remainingSeconds);
   }
 
+  private static final Component MERGE_SEPARATOR = ColorUtil.parse(" <#8B8B8B>| ");
+
   /**
    * Appends wind, mace, and other general item cooldown segments (same order as combat merge).
    */
-  public void appendMergedCooldownSuffix(StringBuilder merged, Player player, boolean appendWindCharge) {
-    if (merged == null || player == null || !player.isOnline()) return;
+  public Component appendMergedCooldownSuffix(Component merged, Player player, boolean appendWindCharge) {
+    if (merged == null || player == null || !player.isOnline()) return merged;
 
     if (appendWindCharge && isWindChargeOnCooldown(player)) {
       int remainingWind = getRemainingWindChargeCooldown(player);
-      String windActionBar = plugin.getLanguageManager().getActionBar(
+      Component windActionBar = plugin.getLanguageManager().getActionBar(
           "windcharge_cooldown", Map.of("time", String.valueOf(remainingWind)));
       if (windActionBar != null) {
-        merged.append(ColorUtil.translateHexColorCodes(" &#8B8B8B| ")).append(windActionBar);
+        merged = merged.append(MERGE_SEPARATOR).append(windActionBar);
       }
     }
 
@@ -364,34 +365,36 @@ public final class ItemCooldownManager {
     boolean maceCd = isGeneralItemOnCooldown(player, maceKey);
     if (maceCd) {
       int remainingMace = getRemainingGeneralItemCooldown(player, maceKey);
-      String maceLine = plugin.getLanguageManager().getActionBar(
+      Component maceLine = plugin.getLanguageManager().getActionBar(
           "mace_cooldown", Map.of("time", String.valueOf(remainingMace)));
       if (maceLine != null) {
-        merged.append(ColorUtil.translateHexColorCodes(" &#8B8B8B| ")).append(maceLine);
+        merged = merged.append(MERGE_SEPARATOR).append(maceLine);
       }
     }
 
     int lungeRemaining = getRemainingLungeCooldown(player);
     if (lungeRemaining > 0) {
-      String lungeLine = plugin.getLanguageManager().getActionBar(
+      Component lungeLine = plugin.getLanguageManager().getActionBar(
           LUNGE_COOLDOWN_ACTION_BAR_KEY, Map.of("time", String.valueOf(lungeRemaining)));
       if (lungeLine != null) {
-        merged.append(ColorUtil.translateHexColorCodes(" &#8B8B8B| ")).append(lungeLine);
+        merged = merged.append(MERGE_SEPARATOR).append(lungeLine);
       }
     }
 
     GeneralCooldownInfo generalInfo = getSoonestGeneralItemCooldownInfo(player, maceCd ? Material.MACE : null);
     if (generalInfo != null) {
-      String generalActionBar = plugin.getLanguageManager().getActionBar(
+      Component generalActionBar = plugin.getLanguageManager().getActionBar(
           "general_item_cooldown",
           Map.of(
               "item", generalInfo.itemName(),
               "time", String.valueOf(generalInfo.remainingSeconds())
           ));
       if (generalActionBar != null) {
-        merged.append(ColorUtil.translateHexColorCodes(" &#8B8B8B| ")).append(generalActionBar);
+        merged = merged.append(MERGE_SEPARATOR).append(generalActionBar);
       }
     }
+
+    return merged;
   }
 
   public void startGeneralCooldown(Player player, CooldownKey key, long durationMs) {

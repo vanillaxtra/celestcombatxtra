@@ -27,7 +27,7 @@ import com.shyamstudio.celestcombatXtra.cooldown.ItemCooldownManager;
 import com.shyamstudio.celestcombatXtra.cooldown.ItemCooldownManager.CooldownKey;
 import com.shyamstudio.celestcombatXtra.util.SpearMaterials;
 
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
 
 import java.util.Locale;
 import java.util.Map;
@@ -268,9 +268,9 @@ public final class SpearControlListener implements Listener {
 
   private void notifySpearDisabled(Player player) {
     if (player == null) return;
-    String bar = plugin.getLanguageManager().getActionBar("spear_disabled", Map.of());
+    Component bar = plugin.getLanguageManager().getActionBar("spear_disabled", Map.of());
     if (bar != null) {
-      plugin.sendActionBar(player, TextComponent.fromLegacyText(bar));
+      plugin.sendActionBar(player, bar);
     } else {
       plugin.getMessageService().sendMessage(player, "spear_disabled", Map.of());
     }

@@ -23,7 +23,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 
 import com.shyamstudio.celestcombatXtra.CelestCombatPro;
 
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
 
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -308,9 +308,9 @@ public final class ExplosiveControlsListener implements Listener {
 
   private void notify(Player player, String key) {
     if (player == null) return;
-    String bar = plugin.getLanguageManager().getActionBar(key, Map.of());
+    Component bar = plugin.getLanguageManager().getActionBar(key, Map.of());
     if (bar != null) {
-      plugin.sendActionBar(player, TextComponent.fromLegacyText(bar));
+      plugin.sendActionBar(player, bar);
     } else {
       plugin.getMessageService().sendMessage(player, key);
     }

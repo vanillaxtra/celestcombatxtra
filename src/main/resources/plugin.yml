@@ -1,27 +1,37 @@
 name: CelestCombat-Xtra
-version: '1.3.0'
+version: '1.5.0'
 main: com.shyamstudio.celestcombatXtra.CelestCombatXtra
 api-version: '1.21'
 authors: [ RaviRai, Nighter ]
 description: A simple combat logging plugins
 folia-supported: true
+canvas-supported: true
 
 soft-depend:
   - WorldGuard
   - PlaceholderAPI
   - Multiverse-Core
   - Worlds
+  - packetevents
+  - Lands
+  - HuskSync
 
 commands:
   celestcombat-xtra:
     description: Main command for CelestCombat Xtra
     usage: /celestcombat-xtra
     aliases: [celestcombat, combat, ccx]
+  pvp:
+    description: Toggle your own PVP state
+    usage: /pvp
 
 permissions:
   celestcombatxtra.command.use:
     description: Allows players to use all commands of CelestCombat Xtra
     default: op
+  celestcombatxtra.command.pvp:
+    description: Allows players to toggle their own PVP state with /pvp
+    default: true
   celestcombatxtra.update.notify:
     description: Receive update notifications
     default: op

@@ -6,7 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Trident;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -25,7 +25,6 @@ import com.shyamstudio.celestcombatXtra.CelestCombatPro;
 import com.shyamstudio.celestcombatXtra.Scheduler;
 import com.shyamstudio.celestcombatXtra.combat.CombatManager;
 import com.shyamstudio.celestcombatXtra.cooldown.ItemCooldownManager;
-import com.shyamstudio.celestcombatXtra.language.ColorUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -333,20 +332,19 @@ public class TridentListener implements Listener {
     }
 
     private void sendPhase1MergedActionBar(Player player, String baseActionBarKey, Map<String, String> basePlaceholders) {
-        String baseActionBar = plugin.getLanguageManager().getActionBar(baseActionBarKey, basePlaceholders);
+        Component baseActionBar = plugin.getLanguageManager().getActionBar(baseActionBarKey, basePlaceholders);
         if (baseActionBar == null) {
             plugin.getMessageService().sendMessage(player, baseActionBarKey, basePlaceholders);
             return;
         }
         if (plugin.isActionBarDisabled()) return;
 
-        StringBuilder merged = new StringBuilder(baseActionBar);
+        Component merged = baseActionBar;
         if (itemCooldownManager != null) {
-            itemCooldownManager.appendMergedCooldownSuffix(merged, player, true);
+            merged = itemCooldownManager.appendMergedCooldownSuffix(merged, player, true);
         }
 
-        plugin.sendActionBar(player,
-                TextComponent.fromLegacyText(ColorUtil.translateHexColorCodes(merged.toString())));
+        plugin.sendActionBar(player, merged);
     }
 
     /**

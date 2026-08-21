@@ -1,10 +1,11 @@
 package com.shyamstudio.celestcombatXtra.protection;
 
 import lombok.Getter;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -34,7 +35,7 @@ public class NewbieProtectionManager {
     private long protectionDurationSeconds;
     private boolean useBossBar;
     private boolean useActionBar;
-    private String bossBarTitle;
+    private String bossBarTitleTemplate;
     private BarColor bossBarColor;
     private BarStyle bossBarStyle;
     private Map<String, Boolean> worldProtectionSettings = new ConcurrentHashMap<>();
@@ -80,8 +81,7 @@ public class NewbieProtectionManager {
 
         this.useBossBar = config.getBoolean("newbie_protection.display.use_bossbar", true);
         this.useActionBar = config.getBoolean("newbie_protection.display.use_actionbar", false);
-        String langTitle = plugin.getLanguageManager().getBossBarTitle("newbie_protection_bossbar", java.util.Collections.emptyMap());
-        this.bossBarTitle = langTitle != null ? langTitle : "&#4CAF50PvP Protection: &#FFFFFF%time%";
+        this.bossBarTitleTemplate = "<#4CAF50>PvP Protection: <white><time>";
 
         // Parse boss bar color
         String colorStr = config.getString("newbie_protection.display.bossbar.color", "GREEN");
@@ -303,7 +303,7 @@ public class NewbieProtectionManager {
             // Remove boss bar
             BossBar bossBar = protectionBossBars.remove(playerUUID);
             if (bossBar != null) {
-                bossBar.removeAll();
+                player.hideBossBar(bossBar);
             }
 
             plugin.debug("Removed newbie protection from " + player.getName());
@@ -314,12 +314,20 @@ public class NewbieProtectionManager {
      * Handles when a protected player takes damage
      */
     public boolean handleDamageReceived(Player player, Player attacker) {
+        return handleDamageReceived(player, attacker, true);
+    }
+
+    /**
+     * Handles protected-player damage while allowing the caller to suppress
+     * repeated attacker feedback without changing the protection result.
+     */
+    public boolean handleDamageReceived(Player player, Player attacker, boolean sendAttackerMessage) {
         if (!hasProtection(player)) {
             return false; // Player is not protected
         }
 
         // Send message to attacker if they're a player
-        if (attacker != null && attacker != player) {
+        if (sendAttackerMessage && attacker != null && attacker != player) {
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("player", player.getName());
             placeholders.put("attacker", attacker.getName());
@@ -372,16 +380,13 @@ public class NewbieProtectionManager {
         // Remove existing boss bar if any
         BossBar existingBar = protectionBossBars.get(playerUUID);
         if (existingBar != null) {
-            existingBar.removeAll();
+            player.hideBossBar(existingBar);
         }
 
         // Create new boss bar
-        String title = bossBarTitle.replace("%time%", formatTime(getRemainingTime(player)));
-        title = plugin.getLanguageManager().colorize(title);
-
-        BossBar bossBar = Bukkit.createBossBar(title, bossBarColor, bossBarStyle);
-        bossBar.setProgress(1.0);
-        bossBar.addPlayer(player);
+        Component title = getBossBarTitle(player, getRemainingTime(player));
+        BossBar bossBar = BossBar.bossBar(title, 1.0f, toAdventureColor(bossBarColor), toAdventureOverlay(bossBarStyle));
+        player.showBossBar(bossBar);
 
         protectionBossBars.put(playerUUID, bossBar);
     }
@@ -399,19 +404,17 @@ public class NewbieProtectionManager {
 
         long remainingTime = getRemainingTime(player);
         if (remainingTime <= 0) {
-            bossBar.removeAll();
+            player.hideBossBar(bossBar);
             protectionBossBars.remove(playerUUID);
             return;
         }
 
         // Update title
-        String title = bossBarTitle.replace("%time%", formatTime(remainingTime));
-        title = plugin.getLanguageManager().colorize(title);
-        bossBar.setTitle(title);
+        bossBar.name(getBossBarTitle(player, remainingTime));
 
         // Update progress
         double progress = Math.max(0.0, Math.min(1.0, (double) remainingTime / protectionDurationSeconds));
-        bossBar.setProgress(progress);
+        bossBar.progress((float) progress);
     }
 
     /**
@@ -502,7 +505,8 @@ public class NewbieProtectionManager {
                     Scheduler.runTask(() -> {
                         BossBar bossBar = protectionBossBars.remove(playerUUID);
                         if (bossBar != null) {
-                            bossBar.removeAll();
+                            Player player = Bukkit.getPlayer(playerUUID);
+                            if (player != null) player.hideBossBar(bossBar);
                         }
                     });
 
@@ -557,6 +561,14 @@ public class NewbieProtectionManager {
             return;
         }
 
+        // PvP toggle feature is active and defaults new players to PvP-off:
+        // newbie protection would be redundant since they can't be hit anyway.
+        if (plugin.getPvpToggleManager() != null && !plugin.getConfig().getBoolean("pvp.default_status", true)) {
+            plugin.debug("Skipping newbie protection for " + player.getName() +
+                    " - PvP toggle is active and defaults to off");
+            return;
+        }
+
         // Grant protection to new player
         grantProtection(player);
     }
@@ -570,7 +582,7 @@ public class NewbieProtectionManager {
         UUID playerUUID = player.getUniqueId();
         BossBar bossBar = protectionBossBars.remove(playerUUID);
         if (bossBar != null) {
-            bossBar.removeAll();
+            player.hideBossBar(bossBar);
         }
     }
 
@@ -606,9 +618,10 @@ public class NewbieProtectionManager {
         }
 
         // Remove all boss bars
-        for (BossBar bossBar : protectionBossBars.values()) {
-            bossBar.removeAll();
-        }
+        protectionBossBars.forEach((uuid, bossBar) -> {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) player.hideBossBar(bossBar);
+        });
         protectionBossBars.clear();
 
         // Save data
@@ -616,5 +629,35 @@ public class NewbieProtectionManager {
 
         // Clear collections
         protectedPlayers.clear();
+    }
+
+    private Component getBossBarTitle(Player player, long remainingTime) {
+        Map<String, String> placeholders = Map.of(
+                "player", player.getName(),
+                "time", formatTime(remainingTime));
+        Component title = plugin.getLanguageManager().getBossBarTitle("newbie_protection_bossbar", placeholders);
+        return title != null ? title : com.shyamstudio.celestcombatXtra.language.ColorUtil.parse(bossBarTitleTemplate, placeholders);
+    }
+
+    private static BossBar.Color toAdventureColor(BarColor color) {
+        return switch (color) {
+            case PINK -> BossBar.Color.PINK;
+            case BLUE -> BossBar.Color.BLUE;
+            case RED -> BossBar.Color.RED;
+            case GREEN -> BossBar.Color.GREEN;
+            case YELLOW -> BossBar.Color.YELLOW;
+            case PURPLE -> BossBar.Color.PURPLE;
+            case WHITE -> BossBar.Color.WHITE;
+        };
+    }
+
+    private static BossBar.Overlay toAdventureOverlay(BarStyle style) {
+        return switch (style) {
+            case SOLID -> BossBar.Overlay.PROGRESS;
+            case SEGMENTED_6 -> BossBar.Overlay.NOTCHED_6;
+            case SEGMENTED_10 -> BossBar.Overlay.NOTCHED_10;
+            case SEGMENTED_12 -> BossBar.Overlay.NOTCHED_12;
+            case SEGMENTED_20 -> BossBar.Overlay.NOTCHED_20;
+        };
     }
 }

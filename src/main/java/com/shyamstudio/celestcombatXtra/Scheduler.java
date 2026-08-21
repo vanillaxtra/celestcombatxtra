@@ -39,6 +39,15 @@ public final class Scheduler {
     }
 
     /**
+     * Detect if the server is running on canvas
+     * @return true if running on canvas
+     */
+    public static boolean isRunningOnCanvas() {
+        String version = Bukkit.getServer().getName();
+        return version.toLowerCase().contains("canvas");
+    }
+
+    /**
      * Runs a task on the main thread (or global region in Folia).
      *
      * @param runnable The task to run

@@ -38,12 +38,19 @@ public class ReloadCommand extends BaseCommand {
         if (plugin.getGriefPreventionHook() != null) {
             plugin.getGriefPreventionHook().reloadConfig();
         }
+        if (plugin.getLandsHook() != null) {
+            plugin.getLandsHook().reloadConfig();
+        }
 
         // Reload combat manager configuration
         plugin.getCombatManager().reloadConfig();
         plugin.getKillRewardManager().loadConfig();
         plugin.getNewbieProtectionManager().reloadConfig();
         plugin.getCombatListeners().reload();
+
+        if (plugin.getPvpHighlightManager() != null) {
+            plugin.getPvpHighlightManager().restart();
+        }
 
         if (plugin instanceof CelestCombatXtra xtra) {
             List<String> skippedReserved = xtra.reloadPhase1Listeners();

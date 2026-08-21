@@ -68,6 +68,12 @@ combat:
   # If true, players kicked/banned by admins won't be punished (killed) for combat logging
   exempt_admin_kick: true
 
+  # If true, a combat-logging player's inventory (main storage, armor, off hand)
+  # is captured, cleared and dropped on the ground when they're punished for
+  # logging out mid-combat. If false, their inventory is left untouched (no
+  # item loss on combat-log, only the kill itself still applies).
+  drop_inventory: true
+
   # Disable flight (Creative fly) during combat
   disable_flight: false
 
@@ -471,12 +477,17 @@ safezone_protection:
     # Add more worlds as needed
 
 #---------------------------------------------------
-#            GRIEFPREVENTION INTEGRATION
+#              CLAIM SYSTEM INTEGRATION
 #---------------------------------------------------
 claim_protection:
-  # Enable/disable GriefPrevention integration for claim barriers
+  # Enable/disable claim-system integration for claim barriers
   # This will prevent players in combat from entering protected claims
   enabled: false
+
+  # Which claim plugin backs this feature: "auto", "griefprevention", or "lands".
+  # "auto" uses whichever supported plugin is installed (GriefPrevention preferred
+  # if both are present). Only one backend is ever active at a time.
+  backend: auto
 
   # Block type for the barrier around protected claims
   # Set "BARRIER" for invisible but solid barrier
@@ -493,12 +504,20 @@ claim_protection:
   # Higher values = stronger push back, lower values = gentler push
   push_back_force: 0.6
 
-  # Player claim's permission to bypass claim barriers (player can enter claims while in combat)
-  # EDIT - Can edit claims settings for admins (not recommended for regular players)
-  # MANAGE - Can manage claim settings (most restrictive)
-  # BUILD - Can place/break blocks in the claim (default, good balance)
-  # CONTAINER - Can access containers inventory in the claim (least restrictive)
-  # ACCESS - Can access the claim's bed, buttons and levers (recommended for most cases)
+  # Controls who can bypass the claim barrier while in combat. Interpreted
+  # differently per backend - only the values for your active backend apply:
+  #
+  # GriefPrevention - the claim permission required to bypass:
+  #   MANAGE    - Can manage claim settings (most restrictive)
+  #   EDIT      - Can edit claim settings for admins (not recommended for regular players)
+  #   BUILD     - Can place/break blocks in the claim (default, good balance)
+  #   CONTAINER - Can access container inventory in the claim (least restrictive)
+  #   ACCESS    - Can access the claim's bed, buttons and levers (recommended for most cases)
+  #   NONE      - Nobody bypasses, not even players with full claim permissions
+  #
+  # Lands:
+  #   TRUSTED - The claim owner and trusted members bypass (default)
+  #   NONE    - Nobody bypasses, not even the claim owner
   required_permission: BUILD
 
   # Per-world configuration
@@ -511,3 +530,91 @@ claim_protection:
     world_nether: true        # Enable in the nether
     world_the_end: false       # Disable in the end
     # Add more worlds as needed
+
+#---------------------------------------------------
+#              HUSKSYNC INTEGRATION
+#---------------------------------------------------
+husksync:
+  # Fixes an inventory-duplication exploit: without this, HuskSync can
+  # persist a stale (pre-death, full) inventory snapshot on combat-log kill
+  # and re-apply it on rejoin, duplicating items already dropped on death.
+  # Only takes effect if the HuskSync plugin is actually installed.
+  enabled: true
+
+  # Applying the zeroed-out HuskSync snapshot on rejoin causes a second,
+  # "phantom" death with a generic "<player> died" message and no real cause.
+  # If true, that specific message is suppressed from chat/broadcast.
+  suppress_rejoin_death_message: true
+
+#---------------------------------------------------
+#              PVP TOGGLE (/pvp)
+#---------------------------------------------------
+pvp:
+  # Master switch for the /pvp toggle feature. When false, /pvp toggling,
+  # the status glow highlight, and the toggle-state database are all disabled
+  # entirely (nothing is stored, since there is no toggle status to persist).
+  enabled: true
+
+  # Effective PVP state used when a player has never run /pvp (no database row yet)
+  default_status: true
+
+  # How long it takes to turn PVP ON after running /pvp. During this warmup the
+  # player is still effectively PVP-off, and running /pvp again cancels it.
+  activation_warmup: 5s
+
+  # How long it takes to turn PVP OFF after running /pvp. During this warmup the
+  # player is still effectively PVP-on (can be hit / can hit others). Getting
+  # tagged in combat during this warmup cancels the deactivation.
+  deactivation_warmup: 10s
+
+  status_highlight:
+    # Shows a per-viewer glow: flashing orange while a player arms PVP, solid red
+    # while PVP is fully on. Only visible to viewers whose own PVP is on/arming.
+    # Requires the PacketEvents plugin to be installed separately on the server
+    # (see soft-depend in plugin.yml). If it's not installed, this feature is
+    # silently disabled and everything else (toggle, warmups, damage gating)
+    # keeps working normally.
+    enabled: true
+
+    # How often the flash toggles on/off during activation warmup, in raw ticks
+    # (a plain number, NOT a duration string like "10s" - this field does not
+    # support unit suffixes)
+    flash_interval: 10
+
+  teleport:
+    # When true, teleporting while PVP is ON re-arms it (immediate effective-off,
+    # then re-activates through the same activation_warmup after landing).
+    # Only command/plugin-driven teleports (warps, /tp, homes, etc.) trigger this -
+    # vanilla teleports (ender pearls, chorus fruit, beds, portals, etc.) never do.
+    # This also applies when pvp.enabled above is false: qualifying teleports still
+    # grant activation_warmup seconds of PVP-off grace, even though the /pvp toggle
+    # itself is unavailable.
+    rearm_enabled: true
+
+#---------------------------------------------------
+#              PVP TOGGLE STORAGE
+#---------------------------------------------------
+storage:
+  # sqlite (default, zero-config, file-based) or mariadb
+  type: sqlite
+
+  # Optional prefix for the pvp state table, useful when sharing one database
+  # across multiple servers/plugins (e.g. MariaDB). Only letters, numbers and
+  # underscores are kept - anything else (spaces, dashes, etc.) is normalized to
+  # an underscore, so "hello-world" and "hello world" both become "hello_world".
+  # Leave blank for no prefix. Final table name: <prefix>_pvp_state (or just
+  # "pvp_state" if left blank).
+  table_prefix: ""
+
+  sqlite:
+    file: "data/pvp.db"
+    # SQLite is single-writer - keep this at 1 to avoid SQLITE_BUSY lock contention
+    pool_size: 1
+
+  mariadb:
+    host: "localhost"
+    port: 3306
+    database: "celestcombat"
+    username: "root"
+    password: ""
+    pool_size: 10

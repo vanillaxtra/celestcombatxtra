@@ -15,7 +15,7 @@ import com.shyamstudio.celestcombatXtra.combat.CombatManager;
 import com.shyamstudio.celestcombatXtra.configs.RestrictionConfigPaths;
 import com.shyamstudio.celestcombatXtra.cooldown.UseCooldowns;
 
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
 
 import java.util.HashMap;
 import java.util.List;
@@ -124,9 +124,9 @@ public class ItemRestrictionListener implements Listener {
 
     private void sendRestrictionActionBar(Player player, String key, Map<String, String> placeholders) {
         if (player == null || key == null) return;
-        String actionBar = plugin.getLanguageManager().getActionBar(key, placeholders);
+        Component actionBar = plugin.getLanguageManager().getActionBar(key, placeholders);
         if (actionBar != null) {
-            plugin.sendActionBar(player, TextComponent.fromLegacyText(actionBar));
+            plugin.sendActionBar(player, actionBar);
         } else {
             plugin.getMessageService().sendMessage(player, key, placeholders);
         }

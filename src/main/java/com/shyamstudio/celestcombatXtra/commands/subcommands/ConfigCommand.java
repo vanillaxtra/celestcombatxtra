@@ -160,6 +160,9 @@ public class ConfigCommand extends BaseCommand {
         if (plugin.getGriefPreventionHook() != null) {
             plugin.getGriefPreventionHook().reloadConfig();
         }
+        if (plugin.getLandsHook() != null) {
+            plugin.getLandsHook().reloadConfig();
+        }
 
         plugin.getCombatManager().reloadConfig();
         plugin.getKillRewardManager().loadConfig();

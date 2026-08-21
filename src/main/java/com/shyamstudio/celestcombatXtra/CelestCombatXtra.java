@@ -1,6 +1,7 @@
 package com.shyamstudio.celestcombatXtra;
 
 import com.shyamstudio.celestcombatXtra.cooldown.ItemCooldownManager;
+import com.shyamstudio.celestcombatXtra.highlight.PacketEventsBootstrap;
 import com.shyamstudio.celestcombatXtra.listeners.GeneralItemCooldownListener;
 import com.shyamstudio.celestcombatXtra.listeners.HarmingArrowListener;
 import com.shyamstudio.celestcombatXtra.listeners.ItemLimiterListener;
@@ -25,6 +26,12 @@ public class CelestCombatXtra extends CelestCombatPro {
 
   @Override
   public void onEnable() {
+    // PacketEvents is only required for the PVP status highlight (glow) feature,
+    // and must be installed by the server owner as a separate plugin (soft-depend,
+    // not shaded). If it's absent, CelestCombatPro simply skips constructing the
+    // highlight manager - the rest of the plugin is unaffected.
+    PacketEventsBootstrap.detect(this);
+
     // Base plugin registration (existing combat logic, ender pearl, trident, etc.)
     super.onEnable();
 

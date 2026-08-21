@@ -15,9 +15,8 @@ import com.shyamstudio.celestcombatXtra.CelestCombatPro;
 import com.shyamstudio.celestcombatXtra.configs.WindchargeConfigPaths;
 import com.shyamstudio.celestcombatXtra.cooldown.ItemCooldownManager;
 import com.shyamstudio.celestcombatXtra.cooldown.UseCooldowns;
-import com.shyamstudio.celestcombatXtra.language.ColorUtil;
 
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
 
 import java.util.Map;
 
@@ -144,11 +143,10 @@ public final class WindChargeListener implements Listener {
 
   private void sendWindChargeCooldownActionBar(Player player, int remainingSeconds) {
     if (player == null || !player.isOnline()) return;
-    String line = plugin.getLanguageManager().getActionBar(
+    Component line = plugin.getLanguageManager().getActionBar(
         "windcharge_cooldown", Map.of("time", String.valueOf(remainingSeconds)));
     if (line != null) {
-      plugin.sendActionBar(player,
-          TextComponent.fromLegacyText(ColorUtil.translateHexColorCodes(line)));
+      plugin.sendActionBar(player, line);
     }
   }
 

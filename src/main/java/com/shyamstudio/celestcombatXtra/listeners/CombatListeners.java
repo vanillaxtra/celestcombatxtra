@@ -16,6 +16,8 @@ import com.shyamstudio.celestcombatXtra.combat.CombatManager;
 import com.shyamstudio.celestcombatXtra.combat.DeathAnimationManager;
 import com.shyamstudio.celestcombatXtra.language.MessageService;
 import com.shyamstudio.celestcombatXtra.protection.NewbieProtectionManager;
+import com.shyamstudio.celestcombatXtra.pvp.PvpToggleManager;
+import com.shyamstudio.celestcombatXtra.pvp.TeleportGraceManager;
 import com.shyamstudio.celestcombatXtra.rewards.KillRewardManager;
 
 import org.bukkit.World;
@@ -40,7 +42,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 public class CombatListeners implements Listener {
     private static final long EXPLOSION_TAG_MS = 3500L;
@@ -60,6 +66,7 @@ public class CombatListeners implements Listener {
     }
 
     private record ExplosionTag(Location center, long timeMs, ExplosionKind kind) {}
+    private record PvpDenialKey(UUID attackerId, UUID victimId) {}
 
     private final CelestCombatPro plugin;
     private CombatManager combatManager;
@@ -76,6 +83,9 @@ public class CombatListeners implements Listener {
     private final Map<UUID, UUID> crystalLastHit = new ConcurrentHashMap<>();
     private final Map<UUID, Long> crystalHitTime = new ConcurrentHashMap<>();
     private final CopyOnWriteArrayList<ExplosionTag> recentExplosions = new CopyOnWriteArrayList<>();
+    private final Cache<PvpDenialKey, Boolean> pvpDenialMessageCooldowns = Caffeine.newBuilder()
+            .expireAfterWrite(Duration.ofSeconds(10))
+            .build();
     // Cleanup threshold (5 minutes)
     private static final long DAMAGE_RECORD_CLEANUP_THRESHOLD = TimeUnit.MINUTES.toMillis(5);
 
@@ -173,9 +183,14 @@ public class CombatListeners implements Listener {
             return;
         }
 
+        if (blockIfPvpDisabled(event, attacker, victim)) {
+            return;
+        }
+
         if (newbieProtectionManager.shouldProtectFromPvP()
                 && newbieProtectionManager.hasProtection(victim)) {
-            boolean shouldBlock = newbieProtectionManager.handleDamageReceived(victim, attacker);
+            boolean shouldBlock = newbieProtectionManager.handleDamageReceived(
+                    victim, attacker, shouldSendPvpDenialMessage(attacker, victim));
             if (shouldBlock) {
                 event.setCancelled(true);
                 plugin.debug("Blocked explosion PvP damage to protected newbie: " + victim.getName());
@@ -319,6 +334,81 @@ public class CombatListeners implements Listener {
         return player != null && player.isOnline() ? player : null;
     }
 
+    /**
+     * Cancels the event and messages the attacker if either side has PVP off.
+     * Attacker-off takes precedence over victim-off (more actionable message
+     * for the person taking the swing) when both are off.
+     */
+    private boolean blockIfPvpDisabled(EntityDamageEvent event, Player attacker, Player victim) {
+        PvpToggleManager pvpToggleManager = plugin.getPvpToggleManager();
+        if (pvpToggleManager == null) {
+            return blockIfTeleportGraceActive(event, attacker, victim);
+        }
+
+        boolean attackerOff = !pvpToggleManager.isEffectivelyPvpEnabled(attacker);
+        boolean victimOff = !pvpToggleManager.isEffectivelyPvpEnabled(victim);
+        if (!attackerOff && !victimOff) {
+            return false;
+        }
+
+        event.setCancelled(true);
+        if (!shouldSendPvpDenialMessage(attacker, victim)) {
+            return true;
+        }
+
+        Map<String, String> placeholders = new HashMap<>();
+        if (attackerOff) {
+            messageService.sendMessage(attacker, "pvp_attacker_pvp_disabled", placeholders);
+        } else {
+            placeholders.put("player", victim.getName());
+            messageService.sendMessage(attacker, "pvp_victim_pvp_disabled", placeholders);
+        }
+        return true;
+    }
+
+    /**
+     * Fallback used when {@code pvp.enabled} is false (no PvpToggleManager to
+     * consult) - still blocks damage for players in an active teleport-rearm
+     * grace window granted by {@link TeleportGraceManager}, see {@link
+     * com.shyamstudio.celestcombatXtra.CelestCombatPro#onEnable()}.
+     */
+    private boolean blockIfTeleportGraceActive(EntityDamageEvent event, Player attacker, Player victim) {
+        TeleportGraceManager grace = plugin.getTeleportGraceManager();
+        if (grace == null) {
+            return false;
+        }
+
+        boolean attackerGrace = grace.hasGrace(attacker);
+        boolean victimGrace = grace.hasGrace(victim);
+        if (!attackerGrace && !victimGrace) {
+            return false;
+        }
+
+        event.setCancelled(true);
+        if (!shouldSendPvpDenialMessage(attacker, victim)) {
+            return true;
+        }
+
+        Map<String, String> placeholders = new HashMap<>();
+        if (attackerGrace) {
+            messageService.sendMessage(attacker, "pvp_teleport_grace_attacker_blocked", placeholders);
+        } else {
+            placeholders.put("player", victim.getName());
+            messageService.sendMessage(attacker, "pvp_teleport_grace_victim_blocked", placeholders);
+        }
+        return true;
+    }
+
+    /**
+     * Returns whether a blocked PvP attempt should show feedback. Damage remains
+     * blocked regardless; this only suppresses repeated chat messages for the
+     * same attacker-target pair during the ten-second cooldown.
+     */
+    private boolean shouldSendPvpDenialMessage(Player attacker, Player victim) {
+        PvpDenialKey key = new PvpDenialKey(attacker.getUniqueId(), victim.getUniqueId());
+        return pvpDenialMessageCooldowns.asMap().putIfAbsent(key, Boolean.TRUE) == null;
+    }
+
     private void cleanupStaleCrystalHits() {
         long now = System.currentTimeMillis();
         crystalHitTime.entrySet().removeIf(entry -> now - entry.getValue() > CRYSTAL_HIT_TTL_MS);
@@ -348,13 +438,18 @@ public class CombatListeners implements Listener {
             }
         }
 
+        if (attacker != null && blockIfPvpDisabled(event, attacker, victim)) {
+            return;
+        }
+
         // Handle newbie protection checks
         // Check if victim has newbie protection from PvP
         if (attacker != null && newbieProtectionManager.shouldProtectFromPvP() &&
                 newbieProtectionManager.hasProtection(victim)) {
 
             // Handle the protection (sends messages and potentially removes protection)
-            boolean shouldBlock = newbieProtectionManager.handleDamageReceived(victim, attacker);
+            boolean shouldBlock = newbieProtectionManager.handleDamageReceived(
+                    victim, attacker, shouldSendPvpDenialMessage(attacker, victim));
             if (shouldBlock) {
                 event.setCancelled(true);
                 plugin.debug("Blocked PvP damage to protected newbie: " + victim.getName());
@@ -415,6 +510,9 @@ public class CombatListeners implements Listener {
         if (CelestCombatAPI.getCombatAPI().isInCombat(player)) {
             playerLoggedOutInCombat.put(player.getUniqueId(), true);
 
+            // End combat for any opponent whose remaining opponents are now all offline
+            CelestCombatAPI.getCombatAPI().handlePlayerCombatExit(player);
+
             // Punish the player for combat logging using API
             CelestCombatAPI.getCombatAPI().punishCombatLogout(player);
 
@@ -436,16 +534,15 @@ public class CombatListeners implements Listener {
             if (plugin.getConfig().getBoolean("combat.exempt_admin_kick", true)) {
 
                 // Don't punish, just remove from combat
-                Player opponent = CelestCombatAPI.getCombatAPI().getCombatOpponent(player);
+                CelestCombatAPI.getCombatAPI().handlePlayerCombatExit(player);
                 CelestCombatAPI.getCombatAPI().removeFromCombatSilently(player);
-
-                if (opponent != null) {
-                    CelestCombatAPI.getCombatAPI().removeFromCombat(opponent);
-                }
             } else {
                 // Regular kick, treat as combat logout
                 Player opponent = CelestCombatAPI.getCombatAPI().getCombatOpponent(player);
                 playerLoggedOutInCombat.put(player.getUniqueId(), true);
+
+                // End combat for any opponent whose remaining opponents are now all offline
+                CelestCombatAPI.getCombatAPI().handlePlayerCombatExit(player);
 
                 // Punish for combat logging
                 CelestCombatAPI.getCombatAPI().punishCombatLogout(player);
@@ -458,9 +555,6 @@ public class CombatListeners implements Listener {
                 }
 
                 CelestCombatAPI.getCombatAPI().removeFromCombatSilently(player);
-                if (opponent != null) {
-                    CelestCombatAPI.getCombatAPI().removeFromCombat(opponent);
-                }
             }
         }
     }
@@ -485,6 +579,12 @@ public class CombatListeners implements Listener {
             // Perform death animation
             deathAnimationManager.performDeathAnimation(victim, killer);
 
+            // Reconcile every tracked opponent before the victim's combat group
+            // is pruned. The final hit refreshes the killer's timer, so removing
+            // the victim first would otherwise leave a lone killer tagged until
+            // that new timer expires.
+            CelestCombatAPI.getCombatAPI().handlePlayerCombatExit(victim);
+
             // Always remove victim from combat
             CelestCombatAPI.getCombatAPI().removeFromCombat(victim);
 
@@ -493,8 +593,12 @@ public class CombatListeners implements Listener {
                 CelestCombatAPI.getCombatAPI().removeFromCombat(killer);
             }
         }
-        // If player died by other causes but was in combat
-        else if (CelestCombatAPI.getCombatAPI().isInCombat(victim)) {
+        // If player died by other causes but was in combat.
+        // Deliberately checked via raw map membership rather than isInCombat(victim):
+        // isInCombat() self-expires (and prunes the opponent group) as a side effect
+        // when the timer has just lapsed, which would silently drop us into the
+        // "died outside of combat" branch below and skip ending the opponent's combat.
+        else if (CelestCombatAPI.getCombatAPI().getPlayersInCombat().containsKey(victimId)) {
             Player opponent = CelestCombatAPI.getCombatAPI().getCombatOpponent(victim);
 
             // Check if we have an opponent or a recent damage source
@@ -519,11 +623,13 @@ public class CombatListeners implements Listener {
                 deathAnimationManager.performDeathAnimation(victim, null);
             }
 
+            // End combat for every tracked opponent (not just the last attacker) whose
+            // fights with the victim are now fully resolved, e.g. a group fight where
+            // the victim was the only remaining opponent for one of the attackers.
+            CelestCombatAPI.getCombatAPI().handlePlayerCombatExit(victim);
+
             // Clean up combat state
             CelestCombatAPI.getCombatAPI().removeFromCombat(victim);
-            if (opponent != null) {
-                CelestCombatAPI.getCombatAPI().removeFromCombat(opponent);
-            }
 
             // Clean up damage tracking
             lastDamageSource.remove(victimId);

@@ -1,22 +1,30 @@
 package com.shyamstudio.celestcombatXtra.combat;
 
 import lombok.Getter;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 import com.shyamstudio.celestcombatXtra.CelestCombatPro;
 import com.shyamstudio.celestcombatXtra.Scheduler;
 import com.shyamstudio.celestcombatXtra.configs.WindchargeConfigPaths;
 import com.shyamstudio.celestcombatXtra.cooldown.ItemCooldownManager;
+import com.shyamstudio.celestcombatXtra.hooks.husksync.HuskSyncHook;
 import com.shyamstudio.celestcombatXtra.language.ColorUtil;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -28,6 +36,8 @@ public class CombatManager {
     @Getter private final Map<UUID, Long> playersInCombat;
     private final Map<UUID, Scheduler.Task> combatTasks;
     private final Map<UUID, UUID> combatOpponents;
+    private final Map<UUID, Set<UUID>> combatOpponentGroups;
+    private HuskSyncHook huskSyncHook;
 
     // Single countdown task instead of per-player tasks
     private Scheduler.Task globalCountdownTask;
@@ -74,6 +84,7 @@ public class CombatManager {
         this.playersInCombat = new ConcurrentHashMap<>();
         this.combatTasks = new ConcurrentHashMap<>();
         this.combatOpponents = new ConcurrentHashMap<>();
+        this.combatOpponentGroups = new ConcurrentHashMap<>();
         this.enderPearlCooldowns = new ConcurrentHashMap<>();
 
         // Cache configuration values to avoid repeated lookups
@@ -120,8 +131,7 @@ public class CombatManager {
 
     private void loadBossBarConfig() {
         this.bossBarEnabled = plugin.getConfig().getBoolean("combat.bossbar.enabled", false);
-        String langTitle = plugin.getLanguageManager().getBossBarTitle("combat_bossbar", java.util.Collections.emptyMap());
-        this.bossBarTitleTemplate = langTitle != null ? langTitle : "&c\u2694 Combat: &f%time%s remaining";
+        this.bossBarTitleTemplate = "<red>\u2694 Combat: <white><time>s remaining";
         String colorStr = plugin.getConfig().getString("combat.bossbar.color", "RED");
         try {
             this.bossBarColor = BarColor.valueOf(colorStr.toUpperCase());
@@ -267,6 +277,7 @@ public class CombatManager {
                         // Player is offline, clean up
                         playersInCombat.remove(playerUUID);
                         combatOpponents.remove(playerUUID);
+                        pruneOpponentGroup(playerUUID);
                         Scheduler.Task task = combatTasks.remove(playerUUID);
                         if (task != null) {
                             task.cancel();
@@ -403,28 +414,25 @@ public class CombatManager {
         if (!bossBarEnabled || player == null || !player.isOnline()) return;
 
         BossBar bar = combatBossBars.computeIfAbsent(player.getUniqueId(), u -> {
-            BossBar b = Bukkit.createBossBar("", bossBarColor, bossBarStyle);
-            b.addPlayer(player);
+            BossBar b = BossBar.bossBar(Component.empty(), 1.0f, toAdventureColor(bossBarColor), toAdventureOverlay(bossBarStyle));
+            player.showBossBar(b);
             return b;
         });
 
-        String title = plugin.getLanguageManager().getBossBarTitle(
+        Component title = plugin.getLanguageManager().getBossBarTitle(
                 "combat_bossbar", buildCombatDisplayPlaceholders(player, remainingSeconds));
         if (title == null) {
-            title = bossBarTitleTemplate.replace("%time%", String.valueOf(remainingSeconds));
-            title = ColorUtil.translateHexColorCodes(
-                    org.bukkit.ChatColor.translateAlternateColorCodes('&', title));
+            title = ColorUtil.parse(bossBarTitleTemplate, Map.of("time", String.valueOf(remainingSeconds)));
         }
-        bar.setTitle(title);
-        bar.setProgress(Math.max(0, Math.min(1, remainingSeconds / (double) combatDurationSeconds)));
-        bar.setVisible(true);
+        bar.name(title);
+        bar.progress((float) Math.max(0, Math.min(1, remainingSeconds / (double) combatDurationSeconds)));
     }
 
     private void clearCombatBossBar(Player player) {
         if (player == null) return;
         BossBar bar = combatBossBars.remove(player.getUniqueId());
         if (bar != null) {
-            bar.removeAll();
+            player.hideBossBar(bar);
         }
     }
 
@@ -440,17 +448,16 @@ public class CombatManager {
         if (player == null || !player.isOnline()) return;
         if (plugin.isActionBarDisabled()) return;
 
-        String baseActionBar = plugin.getLanguageManager().getActionBar(baseActionBarKey, basePlaceholders);
+        Component baseActionBar = plugin.getLanguageManager().getActionBar(baseActionBarKey, basePlaceholders);
         if (baseActionBar == null) return;
 
-        StringBuilder merged = new StringBuilder(baseActionBar);
+        Component merged = baseActionBar;
 
         if (itemCooldownManager != null) {
-            itemCooldownManager.appendMergedCooldownSuffix(merged, player, appendWindCharge);
+            merged = itemCooldownManager.appendMergedCooldownSuffix(merged, player, appendWindCharge);
         }
 
-        plugin.sendActionBar(player,
-                TextComponent.fromLegacyText(ColorUtil.translateHexColorCodes(merged.toString())));
+        plugin.sendActionBar(player, merged);
     }
 
     public void tagPlayer(Player player, Player attacker) {
@@ -480,6 +487,7 @@ public class CombatManager {
         }
 
         combatOpponents.put(playerUUID, attacker.getUniqueId());
+        combatOpponentGroups.computeIfAbsent(playerUUID, k -> ConcurrentHashMap.newKeySet()).add(attacker.getUniqueId());
         playersInCombat.put(playerUUID, newEndTime);
 
         // Cancel existing task if any
@@ -490,16 +498,93 @@ public class CombatManager {
 
         combatNametagManager.refresh(player);
         combatNametagManager.refresh(attacker);
+
+        if (plugin.getPvpToggleManager() != null) {
+            plugin.getPvpToggleManager().onCombatTag(player);
+        }
+    }
+
+    public void setHuskSyncHook(HuskSyncHook hook) {
+        this.huskSyncHook = hook;
     }
 
     public void punishCombatLogout(Player player) {
         if (player == null) return;
 
+        boolean dropInventory = plugin.getConfig().getBoolean("combat.drop_inventory", true);
+        if (dropInventory) {
+            // Must run before setHealth(0): HuskSync's own quit-time snapshot can
+            // otherwise race with the vanilla death drop and re-apply a stale, full
+            // inventory on rejoin, duplicating whatever we drop here. Marking the
+            // player first (before we touch their inventory) lets the hook's
+            // BukkitDataSaveEvent listener zero out that snapshot regardless of timing.
+            if (huskSyncHook != null) {
+                huskSyncHook.markPendingPunishment(player);
+            }
+            dropInventoryOnLogout(player);
+        }
+
         player.setHealth(0);
         removeFromCombat(player);
     }
 
+    /**
+     * Manually captures, clears and drops a player's inventory on the ground.
+     * The vanilla death-drop triggered by {@code setHealth(0)} during
+     * {@code PlayerQuitEvent} handling is not reliable (the player entity is
+     * already mid-disconnect), so combat-log punishment takes over item
+     * disposal itself rather than relying on it.
+     */
+    private void dropInventoryOnLogout(Player player) {
+        PlayerInventory inventory = player.getInventory();
+        List<ItemStack> drops = new ArrayList<>();
+
+        ItemStack[] contents = inventory.getContents();
+        collectAndClear(contents, drops);
+        inventory.setContents(contents);
+
+        ItemStack[] armor = inventory.getArmorContents();
+        collectAndClear(armor, drops);
+        inventory.setArmorContents(armor);
+
+        ItemStack offHand = inventory.getItemInOffHand();
+        if (!isEmptyItem(offHand)) {
+            drops.add(offHand);
+        }
+        inventory.setItemInOffHand(null);
+
+        if (drops.isEmpty()) {
+            return;
+        }
+
+        Location dropLocation = player.getLocation().clone();
+        Scheduler.runLocationTaskLater(dropLocation, () -> {
+            World world = dropLocation.getWorld();
+            if (world == null) return;
+            for (ItemStack item : drops) {
+                world.dropItemNaturally(dropLocation, item);
+            }
+        }, 1L);
+    }
+
+    private void collectAndClear(ItemStack[] slots, List<ItemStack> drops) {
+        for (int i = 0; i < slots.length; i++) {
+            if (!isEmptyItem(slots[i])) {
+                drops.add(slots[i]);
+                slots[i] = null;
+            }
+        }
+    }
+
+    private boolean isEmptyItem(ItemStack item) {
+        return item == null || item.getType() == Material.AIR;
+    }
+
     public void removeFromCombat(Player player) {
+        removeFromCombat(player, "combat_expired");
+    }
+
+    public void removeFromCombat(Player player, String messageKey) {
         if (player == null) return;
 
         UUID playerUUID = player.getUniqueId();
@@ -513,6 +598,7 @@ public class CombatManager {
 
         playersInCombat.remove(playerUUID);
         combatOpponents.remove(playerUUID);
+        pruneOpponentGroup(playerUUID);
 
         Scheduler.Task task = combatTasks.remove(playerUUID);
         if (task != null) {
@@ -521,7 +607,7 @@ public class CombatManager {
 
         // Send appropriate message if player was in combat
         if (player.isOnline()) {
-            plugin.getMessageService().sendMessage(player, "combat_expired");
+            plugin.getMessageService().sendMessage(player, messageKey);
         }
     }
 
@@ -535,6 +621,7 @@ public class CombatManager {
 
         playersInCombat.remove(playerUUID);
         combatOpponents.remove(playerUUID);
+        pruneOpponentGroup(playerUUID);
 
         Scheduler.Task task = combatTasks.remove(playerUUID);
         if (task != null) {
@@ -542,6 +629,70 @@ public class CombatManager {
         }
 
         // No message is sent
+    }
+
+    /**
+     * Removes {@code playerUUID}'s opponent-group entry and strips it out of every
+     * opponent's group, so a player who has left combat can't keep another player's
+     * group non-empty and block the disconnect auto-expiry check below.
+     */
+    private void pruneOpponentGroup(UUID playerUUID) {
+        Set<UUID> opponents = combatOpponentGroups.remove(playerUUID);
+        if (opponents != null) {
+            for (UUID oppId : opponents) {
+                Set<UUID> oppSet = combatOpponentGroups.get(oppId);
+                if (oppSet != null) {
+                    oppSet.remove(playerUUID);
+                }
+            }
+        }
+    }
+
+    /**
+     * Called whenever a player permanently leaves combat outside the normal timeout
+     * path — disconnecting (quit/kick) or dying to something other than a tracked
+     * opponent. Walks every opponent still grouped against {@code player} and, for
+     * each one, drops {@code player} from that opponent's remaining-opponents group;
+     * if that leaves the opponent with no other online opponent, their combat ends
+     * immediately instead of ticking down to the full duration. Opponents who still
+     * have another online opponent (group fights) are left untouched.
+     */
+    public Set<UUID> handlePlayerCombatExit(Player player) {
+        if (player == null) return Collections.emptySet();
+
+        UUID playerUUID = player.getUniqueId();
+        Set<UUID> opponents = combatOpponentGroups.get(playerUUID);
+        if (opponents == null || opponents.isEmpty()) return Collections.emptySet();
+
+        Set<UUID> autoRemovedOpponents = new HashSet<>();
+
+        for (UUID oppId : new HashSet<>(opponents)) {
+            Set<UUID> oppSet = combatOpponentGroups.get(oppId);
+            if (oppSet != null) {
+                oppSet.remove(playerUUID);
+            }
+
+            Player opponent = Bukkit.getPlayer(oppId);
+            if (opponent == null || !opponent.isOnline()) continue;
+
+            if (isInCombat(opponent) && allRemainingOpponentsOffline(oppId)) {
+                removeFromCombat(opponent, "combat_opponent_gone");
+                autoRemovedOpponents.add(oppId);
+            }
+        }
+
+        return autoRemovedOpponents;
+    }
+
+    private boolean allRemainingOpponentsOffline(UUID playerUUID) {
+        Set<UUID> opponents = combatOpponentGroups.get(playerUUID);
+        if (opponents == null || opponents.isEmpty()) return true;
+
+        for (UUID uuid : opponents) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p != null && p.isOnline()) return false;
+        }
+        return true;
     }
 
     public Player getCombatOpponent(Player player) {
@@ -905,11 +1056,37 @@ public class CombatManager {
 
         playersInCombat.clear();
         combatOpponents.clear();
+        combatOpponentGroups.clear();
         enderPearlCooldowns.clear();
         tridentCooldowns.clear();
 
         combatNametagManager.clearAllOnline();
-        combatBossBars.values().forEach(BossBar::removeAll);
+        combatBossBars.forEach((uuid, bar) -> {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) player.hideBossBar(bar);
+        });
         combatBossBars.clear();
+    }
+
+    private static BossBar.Color toAdventureColor(BarColor color) {
+        return switch (color) {
+            case PINK -> BossBar.Color.PINK;
+            case BLUE -> BossBar.Color.BLUE;
+            case RED -> BossBar.Color.RED;
+            case GREEN -> BossBar.Color.GREEN;
+            case YELLOW -> BossBar.Color.YELLOW;
+            case PURPLE -> BossBar.Color.PURPLE;
+            case WHITE -> BossBar.Color.WHITE;
+        };
+    }
+
+    private static BossBar.Overlay toAdventureOverlay(BarStyle style) {
+        return switch (style) {
+            case SOLID -> BossBar.Overlay.PROGRESS;
+            case SEGMENTED_6 -> BossBar.Overlay.NOTCHED_6;
+            case SEGMENTED_10 -> BossBar.Overlay.NOTCHED_10;
+            case SEGMENTED_12 -> BossBar.Overlay.NOTCHED_12;
+            case SEGMENTED_20 -> BossBar.Overlay.NOTCHED_20;
+        };
     }
 }

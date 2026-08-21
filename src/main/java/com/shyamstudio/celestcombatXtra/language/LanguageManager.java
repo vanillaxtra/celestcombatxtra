@@ -1,7 +1,7 @@
 package com.shyamstudio.celestcombatXtra.language;
 
 import lombok.Getter;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
@@ -27,7 +27,7 @@ public class LanguageManager {
     private static final Map<String, String> EMPTY_PLACEHOLDERS = Collections.emptyMap();
 
     // Enhanced cache implementation
-    private final LRUCache<String, String> formattedStringCache;
+    private final LRUCache<String, Component> formattedComponentCache;
     private final LRUCache<String, String[]> loreCache;
     private final LRUCache<String, List<String>> loreListCache;
 
@@ -66,7 +66,7 @@ public class LanguageManager {
         this.defaultLocale = plugin.getConfig().getString("language", "en_US");
         activeFileTypes.addAll(Arrays.asList(LanguageFileType.values()));
 
-        this.formattedStringCache = new LRUCache<>(DEFAULT_STRING_CACHE_SIZE);
+        this.formattedComponentCache = new LRUCache<>(DEFAULT_STRING_CACHE_SIZE);
         this.loreCache = new LRUCache<>(DEFAULT_LORE_CACHE_SIZE);
         this.loreListCache = new LRUCache<>(DEFAULT_LORE_LIST_CACHE_SIZE);
 
@@ -88,7 +88,7 @@ public class LanguageManager {
         this.defaultLocale = plugin.getConfig().getString("language", "en_US");
         activeFileTypes.addAll(Arrays.asList(fileTypes));
 
-        this.formattedStringCache = new LRUCache<>(DEFAULT_STRING_CACHE_SIZE);
+        this.formattedComponentCache = new LRUCache<>(DEFAULT_STRING_CACHE_SIZE);
         this.loreCache = new LRUCache<>(DEFAULT_LORE_CACHE_SIZE);
         this.loreListCache = new LRUCache<>(DEFAULT_LORE_LIST_CACHE_SIZE);
 
@@ -346,7 +346,7 @@ public class LanguageManager {
     //               Messages Methods
     //---------------------------------------------------
 
-    public String getMessage(String key, Map<String, String> placeholders) {
+    public Component getMessage(String key, Map<String, String> placeholders) {
         if (!isMessageEnabled(key)) {
             return null;
         }
@@ -354,10 +354,11 @@ public class LanguageManager {
         String message = cachedDefaultLocaleData.messages().getString(key + ".message");
 
         if (message == null) {
-            return "Missing message: " + key;
+            return Component.text("Missing message: " + key);
         }
 
-        // Apply prefix
+        // Apply prefix (both are MiniMessage source; concatenate before parsing so
+        // nesting/inheritance works the same as a single authored string)
         String prefix = getPrefix();
         message = prefix + message;
 
@@ -365,21 +366,21 @@ public class LanguageManager {
         return applyPlaceholdersAndColors(message, placeholders);
     }
 
-    public String getTitle(String key, Map<String, String> placeholders) {
+    public Component getTitle(String key, Map<String, String> placeholders) {
         if (!isMessageEnabled(key)) {
             return null;
         }
         return getRawMessage(key + ".title", placeholders);
     }
 
-    public String getSubtitle(String key, Map<String, String> placeholders) {
+    public Component getSubtitle(String key, Map<String, String> placeholders) {
         if (!isMessageEnabled(key)) {
             return null;
         }
         return getRawMessage(key + ".subtitle", placeholders);
     }
 
-    public String getActionBar(String key, Map<String, String> placeholders) {
+    public Component getActionBar(String key, Map<String, String> placeholders) {
         if (!isMessageEnabled(key)) {
             return null;
         }
@@ -387,19 +388,19 @@ public class LanguageManager {
     }
 
     // reads combat_nametag.prefix — colors + placeholders applied
-    public String getNametagPrefix(Map<String, String> placeholders) {
-        String v = getRawMessage("combat_nametag.prefix", placeholders);
-        return v != null ? v : "";
+    public Component getNametagPrefix(Map<String, String> placeholders) {
+        Component v = getRawMessage("combat_nametag.prefix", placeholders);
+        return v != null ? v : Component.empty();
     }
 
     // reads combat_nametag.suffix — colors + placeholders applied
-    public String getNametagSuffix(Map<String, String> placeholders) {
-        String v = getRawMessage("combat_nametag.suffix", placeholders);
-        return v != null ? v : "";
+    public Component getNametagSuffix(Map<String, String> placeholders) {
+        Component v = getRawMessage("combat_nametag.suffix", placeholders);
+        return v != null ? v : Component.empty();
     }
 
-    // reads <key>.title — colors applied, %time% left for runtime substitution
-    public String getBossBarTitle(String key, Map<String, String> placeholders) {
+    // reads <key>.title — colors + placeholders applied
+    public Component getBossBarTitle(String key, Map<String, String> placeholders) {
         return getRawMessage(key + ".title", placeholders);
     }
 
@@ -412,10 +413,10 @@ public class LanguageManager {
     }
 
     private String getPrefix() {
-        return cachedDefaultLocaleData.messages().getString("prefix", "&7[Server] &r");
+        return cachedDefaultLocaleData.messages().getString("prefix", "<gray>[Server] <reset>");
     }
 
-    String getRawMessage(String path, Map<String, String> placeholders) {
+    Component getRawMessage(String path, Map<String, String> placeholders) {
         String message = cachedDefaultLocaleData.messages().getString(path);
 
         if (message == null) {
@@ -453,7 +454,7 @@ public class LanguageManager {
             return "Missing GUI title: " + key;
         }
 
-        return applyPlaceholdersAndColors(title, placeholders);
+        return ColorUtil.legacyOf(applyPlaceholdersAndColors(title, placeholders));
     }
 
     public String getGuiItemName(String key) {
@@ -483,7 +484,7 @@ public class LanguageManager {
             return "Missing item name: " + key;
         }
 
-        String result = applyPlaceholdersAndColors(name, placeholders);
+        String result = ColorUtil.legacyOf(applyPlaceholdersAndColors(name, placeholders));
 
         // Cache the result
         guiItemNameCache.put(cacheKey, result);
@@ -514,7 +515,7 @@ public class LanguageManager {
         cacheMisses.incrementAndGet();
         List<String> loreList = cachedDefaultLocaleData.gui().getStringList(key);
         String[] result = loreList.stream()
-                .map(line -> applyPlaceholdersAndColors(line, placeholders))
+                .map(line -> ColorUtil.legacyOf(applyPlaceholdersAndColors(line, placeholders)))
                 .toArray(String[]::new);
 
         // Cache the result
@@ -546,7 +547,7 @@ public class LanguageManager {
         cacheMisses.incrementAndGet();
         List<String> loreList = cachedDefaultLocaleData.gui().getStringList(key);
         List<String> result = loreList.stream()
-                .map(line -> applyPlaceholdersAndColors(line, placeholders))
+                .map(line -> ColorUtil.legacyOf(applyPlaceholdersAndColors(line, placeholders)))
                 .toList();
 
         // Cache the result
@@ -605,18 +606,18 @@ public class LanguageManager {
 
                         // Replace the placeholder in the first line
                         String firstLine = processedLine.replace(placeholder, valueLines[0]);
-                        result.add(ColorUtil.translateHexColorCodes(firstLine));
+                        result.add(ColorUtil.legacyOf(ColorUtil.parse(firstLine)));
 
                         // Add remaining lines with the same formatting/indentation
                         String lineStart = processedLine.substring(0, processedLine.indexOf(placeholder));
                         for (int i = 1; i < valueLines.length; i++) {
-                            result.add(ColorUtil.translateHexColorCodes(lineStart + valueLines[i]));
+                            result.add(ColorUtil.legacyOf(ColorUtil.parse(lineStart + valueLines[i])));
                         }
                     }
                 }
             } else {
                 // Standard processing for lines without multi-line placeholders
-                result.add(applyPlaceholdersAndColors(line, placeholders));
+                result.add(ColorUtil.legacyOf(applyPlaceholdersAndColors(line, placeholders)));
             }
         }
 
@@ -658,7 +659,7 @@ public class LanguageManager {
         if (name == null) {
             name = formatEnumName(material.name());
         } else {
-            name = applyPlaceholdersAndColors(name, null);
+            name = ColorUtil.legacyOf(applyPlaceholdersAndColors(name, null));
         }
 
         // Cache the result
@@ -693,7 +694,7 @@ public class LanguageManager {
             return key;
         }
 
-        return applyPlaceholdersAndColors(name, placeholders);
+        return ColorUtil.legacyOf(applyPlaceholdersAndColors(name, placeholders));
     }
 
     public String[] getItemLore(String key) {
@@ -719,7 +720,7 @@ public class LanguageManager {
         cacheMisses.incrementAndGet();
         List<String> loreList = cachedDefaultLocaleData.items().getStringList(key);
         String[] result = loreList.stream()
-                .map(line -> applyPlaceholdersAndColors(line, placeholders))
+                .map(line -> ColorUtil.legacyOf(applyPlaceholdersAndColors(line, placeholders)))
                 .toArray(String[]::new);
 
         // Cache the result
@@ -778,18 +779,18 @@ public class LanguageManager {
 
                         // Replace the placeholder in the first line
                         String firstLine = processedLine.replace(placeholder, valueLines[0]);
-                        result.add(ColorUtil.translateHexColorCodes(firstLine));
+                        result.add(ColorUtil.legacyOf(ColorUtil.parse(firstLine)));
 
                         // Add remaining lines with the same formatting/indentation
                         String lineStart = processedLine.substring(0, processedLine.indexOf(placeholder));
                         for (int i = 1; i < valueLines.length; i++) {
-                            result.add(ColorUtil.translateHexColorCodes(lineStart + valueLines[i]));
+                            result.add(ColorUtil.legacyOf(ColorUtil.parse(lineStart + valueLines[i])));
                         }
                     }
                 }
             } else {
                 // Standard processing for lines without multi-line placeholders
-                result.add(applyPlaceholdersAndColors(line, placeholders));
+                result.add(ColorUtil.legacyOf(applyPlaceholdersAndColors(line, placeholders)));
             }
         }
 
@@ -882,7 +883,7 @@ public class LanguageManager {
             String formattedName = cachedDefaultLocaleData.formatting().getString("mob_names." + mobNameKey);
 
             if (formattedName != null) {
-                result = applyPlaceholdersAndColors(formattedName, null);
+                result = ColorUtil.legacyOf(applyPlaceholdersAndColors(formattedName, null));
                 entityNameCache.put(cacheKey, result);
                 return result;
             }
@@ -988,14 +989,14 @@ public class LanguageManager {
         };
     }
 
-    public String applyPlaceholdersAndColors(String text, Map<String, String> placeholders) {
+    public Component applyPlaceholdersAndColors(String text, Map<String, String> placeholders) {
         if (text == null) return null;
 
         // Create a cache key based on the text and placeholders
         String cacheKey = generateCacheKey(text, placeholders);
 
         // Check if we have a cached result
-        String cachedResult = formattedStringCache.get(cacheKey);
+        Component cachedResult = formattedComponentCache.get(cacheKey);
         if (cachedResult != null) {
             cacheHits.incrementAndGet();
             return cachedResult;
@@ -1003,32 +1004,22 @@ public class LanguageManager {
 
         // Process the text if not cached
         cacheMisses.incrementAndGet();
-        String result = text;
-
-        // Apply placeholders only if there are any
-        if (placeholders != null && !placeholders.isEmpty()) {
-            for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-                result = result.replace("%" + entry.getKey() + "%", entry.getValue());
-            }
-        }
-
-        // Apply hex colors
-        result = ColorUtil.translateHexColorCodes(result);
+        Component result = ColorUtil.parse(text, placeholders);
 
         // Cache the result for future use
-        formattedStringCache.put(cacheKey, result);
+        formattedComponentCache.put(cacheKey, result);
 
         return result;
     }
 
-    public String colorize(String text) {
+    public Component colorize(String text) {
         if (text == null) return null;
 
         // Generate cache key
         String cacheKey = "colorize|" + text;
 
         // Check cache first
-        String cachedText = formattedStringCache.get(cacheKey);
+        Component cachedText = formattedComponentCache.get(cacheKey);
         if (cachedText != null) {
             cacheHits.incrementAndGet();
             return cachedText;
@@ -1036,25 +1027,25 @@ public class LanguageManager {
 
         // Cache miss, colorize the text
         cacheMisses.incrementAndGet();
-        String result = ColorUtil.translateHexColorCodes(text);
+        Component result = ColorUtil.parse(text);
 
         // Cache the result
-        formattedStringCache.put(cacheKey, result);
+        formattedComponentCache.put(cacheKey, result);
 
         return result;
     }
 
     public String getColorCode(String path) {
         if (!activeFileTypes.contains(LanguageFileType.GUI)) {
-            return ChatColor.WHITE.toString();
+            return "§f";
         }
 
         String colorStr = cachedDefaultLocaleData.gui().getString(path);
         if (colorStr == null) {
-            return ChatColor.WHITE.toString();
+            return "§f";
         }
 
-        return applyPlaceholdersAndColors(colorStr, EMPTY_PLACEHOLDERS);
+        return ColorUtil.legacyOf(applyPlaceholdersAndColors(colorStr, EMPTY_PLACEHOLDERS));
     }
 
     //---------------------------------------------------
@@ -1086,7 +1077,7 @@ public class LanguageManager {
     //                 Cache Methods
     //---------------------------------------------------
     public void clearCache() {
-        formattedStringCache.clear();
+        formattedComponentCache.clear();
         loreCache.clear();
         loreListCache.clear();
         guiItemNameCache.clear();
@@ -1120,8 +1111,8 @@ public class LanguageManager {
      */
     public Map<String, Object> getCacheStats() {
         Map<String, Object> stats = new HashMap<>();
-        stats.put("string_cache_size", formattedStringCache.size());
-        stats.put("string_cache_capacity", formattedStringCache.capacity());
+        stats.put("string_cache_size", formattedComponentCache.size());
+        stats.put("string_cache_capacity", formattedComponentCache.capacity());
         stats.put("lore_cache_size", loreCache.size());
         stats.put("lore_cache_capacity", loreCache.capacity());
         stats.put("lore_list_cache_size", loreListCache.size());

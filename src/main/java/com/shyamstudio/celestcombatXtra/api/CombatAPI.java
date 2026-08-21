@@ -16,7 +16,17 @@ public interface CombatAPI {
     void removeFromCombat(Player player);
     
     void removeFromCombatSilently(Player player);
-    
+
+    /**
+     * Ends combat immediately for any opponent of {@code player} whose remaining
+     * tracked opponents are now all offline, instead of leaving them tagged until
+     * the full combat duration times out. Call whenever {@code player} permanently
+     * leaves combat outside the normal timeout — disconnecting (quit or kick) or
+     * dying to something other than a tracked opponent (e.g. a mob) — while still
+     * marked as in combat.
+     */
+    void handlePlayerCombatExit(Player player);
+
     Player getCombatOpponent(Player player);
     
     int getRemainingCombatTime(Player player);
@@ -58,4 +68,10 @@ public interface CombatAPI {
     boolean isTridentCooldownEnabledInWorld(String worldName);
     
     boolean isTridentBannedInWorld(String worldName);
+
+    /**
+     * Effective PVP-enabled state for a player (accounts for the activation/deactivation
+     * warmup state machine - see PvpToggleManager). Not-yet-loaded players are off.
+     */
+    boolean isPvpEnabled(Player player);
 }

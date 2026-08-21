@@ -22,13 +22,12 @@ import com.shyamstudio.celestcombatXtra.configs.RestrictionConfigPaths;
 import com.shyamstudio.celestcombatXtra.cooldown.ItemCooldownManager;
 import com.shyamstudio.celestcombatXtra.cooldown.ItemCooldownManager.CooldownKey;
 import com.shyamstudio.celestcombatXtra.cooldown.UseCooldowns;
-import com.shyamstudio.celestcombatXtra.language.ColorUtil;
 import com.shyamstudio.celestcombatXtra.language.MessageService;
 import com.shyamstudio.celestcombatXtra.util.SpearMaterials;
 
 import io.papermc.paper.event.player.PlayerArmSwingEvent;
 
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -262,11 +261,10 @@ public final class GeneralItemCooldownListener implements Listener {
 
   private void sendMaceCooldownActionBar(Player player, int remainingSeconds) {
     if (player == null || !player.isOnline()) return;
-    String line = plugin.getLanguageManager().getActionBar(
+    Component line = plugin.getLanguageManager().getActionBar(
         "mace_cooldown", Map.of("time", String.valueOf(remainingSeconds)));
     if (line == null) return;
-    plugin.sendActionBar(player,
-        TextComponent.fromLegacyText(ColorUtil.translateHexColorCodes(line)));
+    plugin.sendActionBar(player, line);
   }
 
   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
