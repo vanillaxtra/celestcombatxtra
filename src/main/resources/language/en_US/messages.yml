@@ -45,6 +45,11 @@ combat_expired:
   message: "&#4CAF50You are no longer in combat."
   sound: entity.experience_orb.pickup
 
+combat_opponent_gone:
+  enabled: true
+  message: "&#4CAF50Your opponent left combat. You are no longer tagged."
+  sound: entity.experience_orb.pickup
+
 combat_fly_disabled:
   message: "&cYou cannot fly while in combat!"
   sound: block.note_block.pling

@@ -415,6 +415,9 @@ public class CombatListeners implements Listener {
         if (CelestCombatAPI.getCombatAPI().isInCombat(player)) {
             playerLoggedOutInCombat.put(player.getUniqueId(), true);
 
+            // end combat for opponents who have no other online fighters left
+            CelestCombatAPI.getCombatAPI().handlePlayerCombatExit(player);
+
             // Punish the player for combat logging using API
             CelestCombatAPI.getCombatAPI().punishCombatLogout(player);
 
@@ -434,20 +437,14 @@ public class CombatListeners implements Listener {
         if (CelestCombatAPI.getCombatAPI().isInCombat(player)) {
             // Check if exempt_admin_kick is enabled and this was an admin kick
             if (plugin.getConfig().getBoolean("combat.exempt_admin_kick", true)) {
-
-                // Don't punish, just remove from combat
-                Player opponent = CelestCombatAPI.getCombatAPI().getCombatOpponent(player);
+                CelestCombatAPI.getCombatAPI().handlePlayerCombatExit(player);
                 CelestCombatAPI.getCombatAPI().removeFromCombatSilently(player);
-
-                if (opponent != null) {
-                    CelestCombatAPI.getCombatAPI().removeFromCombat(opponent);
-                }
             } else {
                 // Regular kick, treat as combat logout
                 Player opponent = CelestCombatAPI.getCombatAPI().getCombatOpponent(player);
                 playerLoggedOutInCombat.put(player.getUniqueId(), true);
 
-                // Punish for combat logging
+                CelestCombatAPI.getCombatAPI().handlePlayerCombatExit(player);
                 CelestCombatAPI.getCombatAPI().punishCombatLogout(player);
 
                 if (opponent != null && opponent.isOnline()) {
@@ -458,9 +455,6 @@ public class CombatListeners implements Listener {
                 }
 
                 CelestCombatAPI.getCombatAPI().removeFromCombatSilently(player);
-                if (opponent != null) {
-                    CelestCombatAPI.getCombatAPI().removeFromCombat(opponent);
-                }
             }
         }
     }
@@ -484,6 +478,9 @@ public class CombatListeners implements Listener {
 
             // Perform death animation
             deathAnimationManager.performDeathAnimation(victim, killer);
+
+            // end combat for opponents who only had this victim left
+            CelestCombatAPI.getCombatAPI().handlePlayerCombatExit(victim);
 
             // Always remove victim from combat
             CelestCombatAPI.getCombatAPI().removeFromCombat(victim);
@@ -519,11 +516,8 @@ public class CombatListeners implements Listener {
                 deathAnimationManager.performDeathAnimation(victim, null);
             }
 
-            // Clean up combat state
+            CelestCombatAPI.getCombatAPI().handlePlayerCombatExit(victim);
             CelestCombatAPI.getCombatAPI().removeFromCombat(victim);
-            if (opponent != null) {
-                CelestCombatAPI.getCombatAPI().removeFromCombat(opponent);
-            }
 
             // Clean up damage tracking
             lastDamageSource.remove(victimId);

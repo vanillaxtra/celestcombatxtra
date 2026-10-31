@@ -18,26 +18,21 @@ public class LanguageUpdater {
     private static final String LANGUAGE_VERSION_KEY = "language_version";
     private static final List<String> SUPPORTED_LANGUAGES = Arrays.asList("en_US", "vi_VN");
 
-    // Track which file types to update
     private final Set<LanguageFileType> activeFileTypes = new HashSet<>();
 
     public LanguageUpdater(JavaPlugin plugin) {
-        this(plugin, LanguageFileType.values());
+        this(plugin, LanguageFileType.MESSAGES);
     }
 
     public LanguageUpdater(JavaPlugin plugin, LanguageFileType... fileTypes) {
         this.plugin = plugin;
         this.currentVersion = plugin.getDescription().getVersion();
         activeFileTypes.addAll(Arrays.asList(fileTypes));
-        checkAndUpdateLanguageFiles();
     }
 
     @Getter
     public enum LanguageFileType {
-        MESSAGES("messages.yml"),
-        GUI("gui.yml"),
-        FORMATTING("formatting.yml"),
-        ITEMS("items.yml");
+        MESSAGES("messages.yml");
 
         private final String fileName;
 
@@ -52,37 +47,32 @@ public class LanguageUpdater {
     public void checkAndUpdateLanguageFiles() {
         for (String language : SUPPORTED_LANGUAGES) {
             File langDir = new File(plugin.getDataFolder(), "language/" + language);
-
-            // Create language directory if it doesn't exist
             if (!langDir.exists()) {
+                //noinspection ResultOfMethodCallIgnored
                 langDir.mkdirs();
             }
 
-            // Check and update each language file type
             for (LanguageFileType fileType : activeFileTypes) {
+                String resourcePath = "language/" + language + "/" + fileType.getFileName();
+                if (plugin.getResource(resourcePath) == null) {
+                    plugin.getLogger().fine("Skipping " + resourcePath + " — no default resource packaged");
+                    continue;
+                }
                 File languageFile = new File(langDir, fileType.getFileName());
                 updateLanguageFile(language, languageFile, fileType);
             }
         }
     }
 
-    /**
-     * Update a specific language file
-     *
-     * @param language     The language code (e.g., "en_US")
-     * @param languageFile The file to update
-     * @param fileType     The type of language file
-     */
     private void updateLanguageFile(String language, File languageFile, LanguageFileType fileType) {
         try {
-            // Create parent directory if it doesn't exist
             if (!languageFile.getParentFile().exists()) {
+                //noinspection ResultOfMethodCallIgnored
                 languageFile.getParentFile().mkdirs();
             }
 
-            // Create the file if it doesn't exist
             if (!languageFile.exists()) {
-                createDefaultLanguageFileWithHeader(language, languageFile, fileType);
+                writeDefaultLanguageFile(language, languageFile, fileType);
                 plugin.getLogger().info("Created new " + fileType.getFileName() + " for " + language);
                 return;
             }
@@ -93,7 +83,7 @@ public class LanguageUpdater {
             Version pluginVersion = new Version(currentVersion);
 
             if (configVersion.compareTo(pluginVersion) >= 0) {
-                return; // No update needed
+                return;
             }
 
             if (!configVersionStr.equals("0.0.0")) {
@@ -101,18 +91,21 @@ public class LanguageUpdater {
                         " from version " + configVersionStr + " to " + currentVersion);
             }
 
-            // Store user's current values
             Map<String, Object> userValues = flattenConfig(currentConfig);
+            userValues.remove(LANGUAGE_VERSION_KEY);
 
-            // Create temp file with new default config
+            List<String> templateLines = loadDefaultLanguageLines(language, fileType);
+            if (templateLines == null) {
+                plugin.getLogger().warning("Default " + fileType.getFileName() + " for " + language +
+                        " not found in the plugin's resources.");
+                return;
+            }
+
             File tempFile = new File(plugin.getDataFolder(),
                     "language/" + language + "/" + fileType.getFileName().replace(".yml", "_new.yml"));
-            createDefaultLanguageFileWithHeader(language, tempFile, fileType);
-
+            writeLines(tempFile, withVersionHeader(templateLines));
             FileConfiguration newConfig = YamlConfiguration.loadConfiguration(tempFile);
-            newConfig.set(LANGUAGE_VERSION_KEY, currentVersion);
 
-            // Check if there are actual differences before creating backup
             boolean configDiffers = hasConfigDifferences(userValues, newConfig);
 
             if (configDiffers) {
@@ -120,16 +113,14 @@ public class LanguageUpdater {
                         "language/" + language + "/" + fileType.getFileName().replace(".yml", "_backup_" + configVersionStr + ".yml"));
                 Files.copy(languageFile.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 plugin.getLogger().info(language + " " + fileType.getFileName() + " backup created at " + backupFile.getName());
-            } else {
-                if (!configVersionStr.equals("0.0.0")) {
-                    plugin.getLogger().info("No significant changes detected in " + language + " " +
-                            fileType.getFileName() + ", skipping backup creation");
-                }
+            } else if (!configVersionStr.equals("0.0.0")) {
+                plugin.getLogger().info("No significant changes detected in " + language + " " +
+                        fileType.getFileName() + ", skipping backup creation");
             }
 
-            // Apply user values and save
-            applyUserValues(newConfig, userValues);
-            newConfig.save(languageFile);
+            List<String> merged = ConfigTextMerger.merge(withVersionHeader(templateLines), userValues);
+            writeLines(languageFile, merged);
+            //noinspection ResultOfMethodCallIgnored
             tempFile.delete();
 
         } catch (Exception e) {
@@ -138,85 +129,74 @@ public class LanguageUpdater {
         }
     }
 
-    /**
-     * Create a default language file with a version header
-     */
-    private void createDefaultLanguageFileWithHeader(String language, File destinationFile, LanguageFileType fileType) {
+    private void writeDefaultLanguageFile(String language, File destinationFile, LanguageFileType fileType) throws IOException {
+        List<String> templateLines = loadDefaultLanguageLines(language, fileType);
+        if (templateLines == null) {
+            plugin.getLogger().warning("Default " + fileType.getFileName() + " for " + language +
+                    " not found in the plugin's resources.");
+            //noinspection ResultOfMethodCallIgnored
+            destinationFile.getParentFile().mkdirs();
+            YamlConfiguration emptyConfig = new YamlConfiguration();
+            emptyConfig.set(LANGUAGE_VERSION_KEY, currentVersion);
+            emptyConfig.set("_note", "This is an empty " + fileType.getFileName() +
+                    " created because no default was found in the plugin resources.");
+            emptyConfig.save(destinationFile);
+            return;
+        }
+        //noinspection ResultOfMethodCallIgnored
+        destinationFile.getParentFile().mkdirs();
+        writeLines(destinationFile, withVersionHeader(templateLines));
+    }
+
+    private List<String> loadDefaultLanguageLines(String language, LanguageFileType fileType) throws IOException {
         try (InputStream in = plugin.getResource("language/" + language + "/" + fileType.getFileName())) {
-            if (in != null) {
-                List<String> defaultLines = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))
-                        .lines()
-                        .toList();
-
-                List<String> newLines = new ArrayList<>();
-                newLines.add("# Language file version - Do not modify this value");
-                newLines.add(LANGUAGE_VERSION_KEY + ": " + currentVersion);
-                newLines.add("");
-                newLines.addAll(defaultLines);
-
-                destinationFile.getParentFile().mkdirs();
-                Files.write(destinationFile.toPath(), newLines, StandardCharsets.UTF_8);
-            } else {
-                plugin.getLogger().warning("Default " + fileType.getFileName() + " for " + language +
-                        " not found in the plugin's resources.");
-
-                // Create empty file with just version
-                destinationFile.getParentFile().mkdirs();
-
-                // Create basic YAML with just the version
-                YamlConfiguration emptyConfig = new YamlConfiguration();
-                emptyConfig.set(LANGUAGE_VERSION_KEY, currentVersion);
-                emptyConfig.set("_note", "This is an empty " + fileType.getFileName() +
-                        " created because no default was found in the plugin resources.");
-                emptyConfig.save(destinationFile);
-            }
-        } catch (IOException e) {
-            plugin.getLogger().severe("Failed to create default language file " + fileType.getFileName() +
-                    " for " + language + ": " + e.getMessage());
-            e.printStackTrace();
+            if (in == null) return null;
+            return new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))
+                    .lines()
+                    .toList();
         }
     }
 
-    /**
-     * Determines if there are actual differences between old and new configs
-     */
+    private List<String> withVersionHeader(List<String> defaultLines) {
+        List<String> newLines = new ArrayList<>(defaultLines.size() + 3);
+        newLines.add("# Language file version - Do not modify this value");
+        newLines.add(LANGUAGE_VERSION_KEY + ": " + currentVersion);
+        newLines.add("");
+        newLines.addAll(defaultLines);
+        return newLines;
+    }
+
+    private static void writeLines(File file, List<String> lines) throws IOException {
+        Files.write(file.toPath(), lines, StandardCharsets.UTF_8);
+    }
+
     private boolean hasConfigDifferences(Map<String, Object> userValues, FileConfiguration newConfig) {
-        // Get all paths from new config (excluding version key)
         Map<String, Object> newConfigMap = flattenConfig(newConfig);
 
-        // Check for removed or changed keys
         for (Map.Entry<String, Object> entry : userValues.entrySet()) {
             String path = entry.getKey();
             Object oldValue = entry.getValue();
-
-            // Skip version key
             if (path.equals(LANGUAGE_VERSION_KEY)) continue;
 
-            // Check if path no longer exists
             if (!newConfig.contains(path)) {
-                return true; // Found a removed path
+                return true;
             }
 
-            // Check if default value changed
             Object newDefaultValue = newConfig.get(path);
             if (newDefaultValue != null && !newDefaultValue.equals(oldValue)) {
-                return true; // Default value changed
+                return true;
             }
         }
 
-        // Check for new keys
         for (String path : newConfigMap.keySet()) {
             if (!path.equals(LANGUAGE_VERSION_KEY) && !userValues.containsKey(path)) {
-                return true; // Found a new path
+                return true;
             }
         }
 
-        return false; // No significant differences
+        return false;
     }
 
-    /**
-     * Flattens a configuration section into a map of path -> value
-     */
     private Map<String, Object> flattenConfig(ConfigurationSection config) {
         Map<String, Object> result = new HashMap<>();
         for (String key : config.getKeys(true)) {
@@ -225,24 +205,5 @@ public class LanguageUpdater {
             }
         }
         return result;
-    }
-
-    /**
-     * Applies the user values to the new config
-     */
-    private void applyUserValues(FileConfiguration newConfig, Map<String, Object> userValues) {
-        for (Map.Entry<String, Object> entry : userValues.entrySet()) {
-            String path = entry.getKey();
-            Object value = entry.getValue();
-
-            // Don't override version key
-            if (path.equals(LANGUAGE_VERSION_KEY)) continue;
-
-            if (newConfig.contains(path)) {
-                newConfig.set(path, value);
-            } else {
-                plugin.getLogger().fine("Config path '" + path + "' from old config no longer exists in new config");
-            }
-        }
     }
 }

@@ -7,7 +7,9 @@ import com.shyamstudio.celestcombatXtra.CelestCombatPro;
 import com.shyamstudio.celestcombatXtra.api.events.*;
 import com.shyamstudio.celestcombatXtra.combat.CombatManager;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class CombatAPIImpl implements CombatAPI {
@@ -69,6 +71,12 @@ public class CombatAPIImpl implements CombatAPI {
         Bukkit.getPluginManager().callEvent(combatEndEvent);
     }
     
+    @Override
+    public Set<UUID> handlePlayerCombatExit(Player player) {
+        if (player == null) return Collections.emptySet();
+        return combatManager.handlePlayerCombatExit(player);
+    }
+
     @Override
     public Player getCombatOpponent(Player player) {
         return combatManager.getCombatOpponent(player);

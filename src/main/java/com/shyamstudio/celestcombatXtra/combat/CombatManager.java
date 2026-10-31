@@ -3,20 +3,28 @@ package com.shyamstudio.celestcombatXtra.combat;
 import lombok.Getter;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 import com.shyamstudio.celestcombatXtra.CelestCombatPro;
 import com.shyamstudio.celestcombatXtra.Scheduler;
 import com.shyamstudio.celestcombatXtra.configs.WindchargeConfigPaths;
 import com.shyamstudio.celestcombatXtra.cooldown.ItemCooldownManager;
+import com.shyamstudio.celestcombatXtra.hooks.husksync.HuskSyncHook;
 import com.shyamstudio.celestcombatXtra.language.ColorUtil;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -28,6 +36,8 @@ public class CombatManager {
     @Getter private final Map<UUID, Long> playersInCombat;
     private final Map<UUID, Scheduler.Task> combatTasks;
     private final Map<UUID, UUID> combatOpponents;
+    private final Map<UUID, Set<UUID>> combatOpponentGroups;
+    private HuskSyncHook huskSyncHook;
 
     // Single countdown task instead of per-player tasks
     private Scheduler.Task globalCountdownTask;
@@ -74,6 +84,7 @@ public class CombatManager {
         this.playersInCombat = new ConcurrentHashMap<>();
         this.combatTasks = new ConcurrentHashMap<>();
         this.combatOpponents = new ConcurrentHashMap<>();
+        this.combatOpponentGroups = new ConcurrentHashMap<>();
         this.enderPearlCooldowns = new ConcurrentHashMap<>();
 
         // Cache configuration values to avoid repeated lookups
@@ -267,6 +278,7 @@ public class CombatManager {
                         // Player is offline, clean up
                         playersInCombat.remove(playerUUID);
                         combatOpponents.remove(playerUUID);
+                        pruneOpponentGroup(playerUUID);
                         Scheduler.Task task = combatTasks.remove(playerUUID);
                         if (task != null) {
                             task.cancel();
@@ -480,6 +492,7 @@ public class CombatManager {
         }
 
         combatOpponents.put(playerUUID, attacker.getUniqueId());
+        combatOpponentGroups.computeIfAbsent(playerUUID, k -> ConcurrentHashMap.newKeySet()).add(attacker.getUniqueId());
         playersInCombat.put(playerUUID, newEndTime);
 
         // Cancel existing task if any
@@ -492,14 +505,76 @@ public class CombatManager {
         combatNametagManager.refresh(attacker);
     }
 
+    public void setHuskSyncHook(HuskSyncHook hook) {
+        this.huskSyncHook = hook;
+    }
+
     public void punishCombatLogout(Player player) {
         if (player == null) return;
+
+        boolean dropInventory = plugin.getConfig().getBoolean("combat.drop_inventory", true);
+        if (dropInventory) {
+            // mark before touching inventory so husksync can zero its disconnect snapshot
+            if (huskSyncHook != null) {
+                huskSyncHook.markPendingPunishment(player);
+            }
+            dropInventoryOnLogout(player);
+        }
 
         player.setHealth(0);
         removeFromCombat(player);
     }
 
+    private void dropInventoryOnLogout(Player player) {
+        PlayerInventory inventory = player.getInventory();
+        List<ItemStack> drops = new ArrayList<>();
+
+        ItemStack[] contents = inventory.getContents();
+        collectAndClear(contents, drops);
+        inventory.setContents(contents);
+
+        ItemStack[] armor = inventory.getArmorContents();
+        collectAndClear(armor, drops);
+        inventory.setArmorContents(armor);
+
+        ItemStack offHand = inventory.getItemInOffHand();
+        if (!isEmptyItem(offHand)) {
+            drops.add(offHand);
+        }
+        inventory.setItemInOffHand(null);
+
+        if (drops.isEmpty()) {
+            return;
+        }
+
+        Location dropLocation = player.getLocation().clone();
+        Scheduler.runLocationTaskLater(dropLocation, () -> {
+            World world = dropLocation.getWorld();
+            if (world == null) return;
+            for (ItemStack item : drops) {
+                world.dropItemNaturally(dropLocation, item);
+            }
+        }, 1L);
+    }
+
+    private void collectAndClear(ItemStack[] slots, List<ItemStack> drops) {
+        for (int i = 0; i < slots.length; i++) {
+            if (!isEmptyItem(slots[i])) {
+                drops.add(slots[i]);
+                slots[i] = null;
+            }
+        }
+    }
+
+    private boolean isEmptyItem(ItemStack item) {
+        return item == null || item.getType() == Material.AIR;
+    }
+
     public void removeFromCombat(Player player) {
+        removeFromCombat(player, "combat_expired");
+    }
+
+    public void removeFromCombat(Player player, String messageKey) {
         if (player == null) return;
 
         UUID playerUUID = player.getUniqueId();
@@ -513,6 +588,7 @@ public class CombatManager {
 
         playersInCombat.remove(playerUUID);
         combatOpponents.remove(playerUUID);
+        pruneOpponentGroup(playerUUID);
 
         Scheduler.Task task = combatTasks.remove(playerUUID);
         if (task != null) {
@@ -521,7 +597,7 @@ public class CombatManager {
 
         // Send appropriate message if player was in combat
         if (player.isOnline()) {
-            plugin.getMessageService().sendMessage(player, "combat_expired");
+            plugin.getMessageService().sendMessage(player, messageKey);
         }
     }
 
@@ -535,6 +611,7 @@ public class CombatManager {
 
         playersInCombat.remove(playerUUID);
         combatOpponents.remove(playerUUID);
+        pruneOpponentGroup(playerUUID);
 
         Scheduler.Task task = combatTasks.remove(playerUUID);
         if (task != null) {
@@ -542,6 +619,60 @@ public class CombatManager {
         }
 
         // No message is sent
+    }
+
+    private void pruneOpponentGroup(UUID playerUUID) {
+        Set<UUID> opponents = combatOpponentGroups.remove(playerUUID);
+        if (opponents != null) {
+            for (UUID oppId : opponents) {
+                Set<UUID> oppSet = combatOpponentGroups.get(oppId);
+                if (oppSet != null) {
+                    oppSet.remove(playerUUID);
+                }
+            }
+        }
+    }
+
+    /**
+     * When a player leaves combat via quit/kick/death, end combat for opponents
+     * who have no other online fighters left in their group.
+     */
+    public Set<UUID> handlePlayerCombatExit(Player player) {
+        if (player == null) return Collections.emptySet();
+
+        UUID playerUUID = player.getUniqueId();
+        Set<UUID> opponents = combatOpponentGroups.get(playerUUID);
+        if (opponents == null || opponents.isEmpty()) return Collections.emptySet();
+
+        Set<UUID> autoRemovedOpponents = new HashSet<>();
+
+        for (UUID oppId : new HashSet<>(opponents)) {
+            Set<UUID> oppSet = combatOpponentGroups.get(oppId);
+            if (oppSet != null) {
+                oppSet.remove(playerUUID);
+            }
+
+            Player opponent = Bukkit.getPlayer(oppId);
+            if (opponent == null || !opponent.isOnline()) continue;
+
+            if (isInCombat(opponent) && allRemainingOpponentsOffline(oppId)) {
+                removeFromCombat(opponent, "combat_opponent_gone");
+                autoRemovedOpponents.add(oppId);
+            }
+        }
+
+        return autoRemovedOpponents;
+    }
+
+    private boolean allRemainingOpponentsOffline(UUID playerUUID) {
+        Set<UUID> opponents = combatOpponentGroups.get(playerUUID);
+        if (opponents == null || opponents.isEmpty()) return true;
+
+        for (UUID uuid : opponents) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p != null && p.isOnline()) return false;
+        }
+        return true;
     }
 
     public Player getCombatOpponent(Player player) {
@@ -905,6 +1036,7 @@ public class CombatManager {
 
         playersInCombat.clear();
         combatOpponents.clear();
+        combatOpponentGroups.clear();
         enderPearlCooldowns.clear();
         tridentCooldowns.clear();
 

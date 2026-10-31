@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import com.shyamstudio.celestcombatXtra.api.events.PreCombatEvent;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public interface CombatAPI {
@@ -16,6 +17,9 @@ public interface CombatAPI {
     void removeFromCombat(Player player);
     
     void removeFromCombatSilently(Player player);
+
+    /** Ends combat for opponents who have no other online fighters left. */
+    Set<UUID> handlePlayerCombatExit(Player player);
     
     Player getCombatOpponent(Player player);
     
