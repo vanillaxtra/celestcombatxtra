@@ -43,3 +43,6 @@ permissions:
   celestcombatxtra.bypass.spear_control:
     description: Bypass spear lunge cooldown and spear damage rules
     default: op
+  celestcombatxtra.bypass.dimension_change:
+    description: Bypass combat dimension-change restrictions
+    default: op

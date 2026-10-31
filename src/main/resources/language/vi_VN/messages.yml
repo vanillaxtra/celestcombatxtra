@@ -36,6 +36,11 @@ command_blocked_in_combat:
   message: "&cBạn không thể sử dụng lệnh /%command% khi đang trong combat! &#F39C12Chờ &#FFFFFF%time%s &#F39C12cho đến khi kết thúc."
   sound: block.anvil.land
 
+dimension_blocked_in_combat:
+  message: "&cBạn không thể đến &#FFFFFF%world% &ckhi đang trong combat!"
+  action_bar: "&#E94E77Không thể vào %world% khi combat!"
+  sound: block.note_block.pling
+
 combat_expired:
   enabled: true
   message: "&#4CAF50Bạn không còn trong combat."

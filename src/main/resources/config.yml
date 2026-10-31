@@ -98,6 +98,19 @@ combat:
     respawn_anchor: true
     tnt_minecart: true
 
+  # Dimension travel while combat-tagged
+  # blacklist = block only worlds in blocked_worlds
+  # whitelist = allow only worlds in allowed_worlds
+  # Bypass: celestcombatxtra.bypass.dimension_change
+  dimension_change:
+    enabled: false
+    mode: blacklist
+    blocked_worlds:
+      - world_nether
+      - world_the_end
+    allowed_worlds:
+      - world
+
 #---------------------------------------------------
 #              ITEM RESTRICTIONS
 #---------------------------------------------------

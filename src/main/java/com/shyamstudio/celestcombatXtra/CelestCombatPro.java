@@ -13,6 +13,7 @@ import com.shyamstudio.celestcombatXtra.hooks.protection.LandsHook;
 import com.shyamstudio.celestcombatXtra.hooks.protection.WorldGuardHook;
 import com.shyamstudio.celestcombatXtra.language.LanguageManager;
 import com.shyamstudio.celestcombatXtra.language.MessageService;
+import com.shyamstudio.celestcombatXtra.listeners.CombatDimensionListener;
 import com.shyamstudio.celestcombatXtra.listeners.CombatListeners;
 import com.shyamstudio.celestcombatXtra.listeners.EnderPearlListener;
 import com.shyamstudio.celestcombatXtra.listeners.EnderchestLister;
@@ -107,6 +108,7 @@ public class CelestCombatPro extends JavaPlugin {
     getServer().getPluginManager().registerEvents(new ElytraCombatAbuseListener(this, combatManager), this);
     getServer().getPluginManager().registerEvents(new ExplosiveControlsListener(this), this);
     getServer().getPluginManager().registerEvents(new EnchantLimiterListener(this), this);
+    getServer().getPluginManager().registerEvents(new CombatDimensionListener(this, combatManager), this);
 
     // soft-depends can enable after us; wait until every plugin has finished onEnable
     getServer().getPluginManager().registerEvents(new org.bukkit.event.Listener() {
