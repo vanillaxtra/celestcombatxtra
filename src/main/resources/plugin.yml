@@ -1,7 +1,7 @@
 name: CelestCombat-Xtra
 version: '${version}'
 main: com.shyamstudio.celestcombatXtra.CelestCombatXtra
-api-version: '26.3'
+api-version: '1.21'
 authors: [ RaviRai, Nighter ]
 description: A simple combat logging plugins
 folia-supported: true

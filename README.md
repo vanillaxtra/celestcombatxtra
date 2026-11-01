@@ -1,7 +1,7 @@
 # CelestCombat-Xtra
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/ptthanh02/CelestCombat)
-[![Platform](https://img.shields.io/badge/Paper-1.21--26.2-purple.svg)](https://papermc.io/)
+[![Version](https://img.shields.io/badge/version-1.4.2-blue.svg)](https://github.com/ptthanh02/CelestCombat)
+[![Platform](https://img.shields.io/badge/Paper-1.21.1--26.3-purple.svg)](https://papermc.io/)
 [![Folia](https://img.shields.io/badge/Folia-Supported-brightgreen.svg)](https://github.com/PaperMC/Folia)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white)](https://discord.gg/WpYZkrdNVe)
 
@@ -11,7 +11,7 @@ A comprehensive combat management plugin for **SwordPvP, CrystalPvP, and competi
 
 ## Requirements
 
-- **Minecraft:** 1.21 – 26.2
+- **Minecraft:** 1.21.1 – 26.3
 - **Server:** Paper, Purpur, or Folia
 - **Java:** 21+
 
